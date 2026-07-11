@@ -365,6 +365,13 @@
     border:1px dashed var(--line);border-radius:var(--radius);padding:14px;
   }
 
+  /* ============ ADMIN LOGIN PANEL ============ */
+  .admin-panel{
+    position:fixed;top:64px;right:16px;z-index:60;
+    background:var(--pitch);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;width:220px;box-shadow:0 14px 34px rgba(0,0,0,.45);
+  }
+
   [hidden]{display:none !important;}
 
   /* ============ MOBILE ============ */
@@ -412,7 +419,8 @@
     <span class="tagline">CLUB · NATIONAL TEAM · TRANSFERS</span>
   </div>
   <span id="modeBadge" style="font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--chalk-dim);border:1px solid var(--line);padding:5px 8px;border-radius:2px;text-transform:uppercase;"></span>
-  <button class="write-btn" id="openWriter">+ New Post</button>
+  <button class="write-btn" id="adminBtn">Admin</button>
+  <button class="write-btn" id="openWriter" hidden>+ New Post</button>
 </header>
 
 <div class="ticker">
@@ -448,8 +456,23 @@
   <span class="nav-item disabled">Fan Culture</span>
   <div class="nav-more">Add more tabs any time — duplicate a nav-item in the HTML and give it a new data-cat, then add matching posts in the script.</div>
 
-  <button class="sidebar-write" id="sidebarWrite">+ Write a new post</button>
+  <button class="sidebar-write" id="sidebarWrite" hidden>+ Write a new post</button>
 </nav>
+
+<!-- ADMIN LOGIN PANEL -->
+<div class="admin-panel" id="adminPanel" hidden>
+  <div class="field">
+    <label for="admin_email">Email</label>
+    <input id="admin_email" type="email" autocomplete="username">
+  </div>
+  <div class="field">
+    <label for="admin_pass">Password</label>
+    <input id="admin_pass" type="password" autocomplete="current-password">
+  </div>
+  <div id="adminError" style="color:var(--bad);font-family:var(--mono);font-size:11px;margin-bottom:10px;"></div>
+  <button class="publish-btn" id="adminSubmit" style="width:100%;">Sign in</button>
+  <button class="cancel-btn" id="adminCancel" style="width:100%;margin-left:0;margin-top:8px;">Cancel</button>
+</div>
 
 <main id="main">
 
@@ -473,6 +496,7 @@
       <div class="results-subnav" id="resultsSubnav">
         <button class="subtab active" data-sub="fixtures">Fixtures</button>
         <button class="subtab" data-sub="table">Table</button>
+        <button class="subtab" data-sub="live">Live</button>
       </div>
       <div id="resultsContent"><div class="scoreboard-empty">Pick a competition above.</div></div>
     </div>
@@ -569,6 +593,7 @@
      this browser's local storage only. -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
 /* =========================================================
    SHARED BACKEND SETUP (Firebase — free tier is plenty for a blog)
@@ -855,6 +880,60 @@ document.getElementById('backFromWriter').addEventListener('click', showFeed);
 document.getElementById('cancelWriter').addEventListener('click', showFeed);
 
 /* =========================================================
+   ADMIN GATE — only a signed-in admin can see "+ New Post" or
+   delete posts when running in shared (Firebase) mode. In
+   local-only mode there's no risk (it's just this browser), so
+   the controls stay visible and no login is needed.
+   ========================================================= */
+const openWriterBtn = document.getElementById('openWriter');
+const sidebarWriteBtn = document.getElementById('sidebarWrite');
+const adminBtn = document.getElementById('adminBtn');
+const adminPanel = document.getElementById('adminPanel');
+
+function setWriteControlsVisible(visible){
+  openWriterBtn.hidden = !visible;
+  sidebarWriteBtn.hidden = !visible;
+}
+
+function isAdmin(){
+  return !FIREBASE_READY || !!(FIREBASE_READY && firebase.auth().currentUser);
+}
+
+if(FIREBASE_READY){
+  setWriteControlsVisible(false);
+  firebase.auth().onAuthStateChanged(user=>{
+    setWriteControlsVisible(!!user);
+    adminBtn.textContent = user ? 'Sign out' : 'Admin';
+  });
+} else {
+  setWriteControlsVisible(true);
+  adminBtn.hidden = true; // nothing to log into locally
+}
+
+adminBtn.addEventListener('click', ()=>{
+  if(!FIREBASE_READY) return;
+  if(firebase.auth().currentUser){
+    firebase.auth().signOut();
+    return;
+  }
+  document.getElementById('adminError').textContent = '';
+  adminPanel.hidden = false;
+});
+document.getElementById('adminCancel').addEventListener('click', ()=> adminPanel.hidden = true);
+document.getElementById('adminSubmit').addEventListener('click', ()=>{
+  const email = document.getElementById('admin_email').value.trim();
+  const pass = document.getElementById('admin_pass').value;
+  const errBox = document.getElementById('adminError');
+  errBox.textContent = '';
+  firebase.auth().signInWithEmailAndPassword(email, pass)
+    .then(()=>{
+      adminPanel.hidden = true;
+      document.getElementById('admin_pass').value = '';
+    })
+    .catch(err=>{ errBox.textContent = 'Sign-in failed — check the email and password.'; });
+});
+
+/* =========================================================
    RENDER FEED
    ========================================================= */
 function fmtDate(iso){
@@ -932,9 +1011,10 @@ function openArticle(id){
     </div>
     <h1>${escapeHtml(p.title)}</h1>
     <div class="article-body">${bodyHtml}</div>
-    <button class="cancel-btn" id="deletePostBtn" style="margin-top:24px;">Delete this post</button>
+    ${isAdmin() ? `<button class="cancel-btn" id="deletePostBtn" style="margin-top:24px;">Delete this post</button>` : ''}
   `;
-  document.getElementById('deletePostBtn').addEventListener('click', ()=> deletePost(p.id));
+  const delBtn = document.getElementById('deletePostBtn');
+  if(delBtn) delBtn.addEventListener('click', ()=> deletePost(p.id));
   showArticle();
 }
 
@@ -1212,9 +1292,38 @@ async function renderResultsContent(){
 
   if(resultsState.sub === 'table' && comp.hasTable){
     renderTable(box, comp);
+  } else if(resultsState.sub === 'live'){
+    renderLive(box, comp);
   } else {
     renderFixtures(box, comp);
   }
+}
+
+async function renderLive(box, comp){
+  // Reuses the season fixture list (fetches it if not cached yet) and
+  // filters down to today's matches that haven't finished — the closest
+  // thing to "live" the free API tier supports. See the note in
+  // RESULTS_CONFIG above about true real-time feeds needing a paid tier.
+  if(!fixturesCache[comp.id]){
+    await renderFixtures(box, comp); // this populates fixturesCache as a side effect
+  }
+  const events = fixturesCache[comp.id] || [];
+  const todayStr = new Date().toISOString().slice(0,10);
+  const live = events.filter(ev=>{
+    const played = ev.strStatus === 'Match Finished' || (ev.intHomeScore !== null && ev.intHomeScore !== undefined && ev.intHomeScore !== '');
+    return ev.dateEvent === todayStr && !played;
+  });
+  if(!live.length){
+    box.innerHTML = `<div class="scoreboard-empty">No live ${escapeHtml(comp.name)} matches right now. Check back on a matchday.</div>`;
+    return;
+  }
+  box.innerHTML = live.map(ev=>`
+    <div class="match-row is-live">
+      <span class="m-team">${escapeHtml(ev.strHomeTeam||'')}</span>
+      <span class="m-score">${ev.intHomeScore ?? 0} - ${ev.intAwayScore ?? 0}</span>
+      <span class="m-team away">${escapeHtml(ev.strAwayTeam||'')}</span>
+      <span class="m-status">LIVE</span>
+    </div>`).join('');
 }
 
 async function fetchJSON(url){
@@ -1265,7 +1374,7 @@ async function renderFixtures(box, comp){
     if(!fixturesCache[comp.id]){
       const season = comp.isWorldCup ? RESULTS_CONFIG.worldCupSeason : RESULTS_CONFIG.season;
       const data = await fetchJSON(`https://www.thesportsdb.com/api/v1/json/${RESULTS_CONFIG.apiKey}/eventsseason.php?id=${comp.id}&s=${season}`);
-      fixturesCache[comp.id] = (data.events || []).sort((a,b)=> new Date(a.dateEvent+'T'+(a.strTime||'00:00:00')) - new Date(b.dateEvent+'T'+(b.strTime||'00:00:00')));
+      fixturesCache[comp.id] = (data.events || []).sort((a,b)=> new Date(b.dateEvent+'T'+(b.strTime||'00:00:00')) - new Date(a.dateEvent+'T'+(a.strTime||'00:00:00')));
     }
     const events = fixturesCache[comp.id];
     if(!events.length){
