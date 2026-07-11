@@ -309,6 +309,41 @@
   }
   footer a{color:var(--floodlight);}
 
+  /* ============ SCOREBOARD STRIP ============ */
+  .scoreboard-wrap{margin-bottom:20px;}
+  .scoreboard-head{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:10px;
+  }
+  .scoreboard-head h2{
+    font-size:13px;letter-spacing:.08em;color:var(--chalk-dim);margin:0;
+  }
+  .scoreboard-head select{
+    background:var(--pitch);border:1px solid var(--line);color:var(--chalk-dim);
+    font-family:var(--mono);font-size:10px;padding:5px 7px;border-radius:var(--radius);
+  }
+  .scoreboard{
+    display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;
+    scrollbar-width:thin;
+  }
+  .score-card{
+    flex:none;width:150px;
+    background:var(--pitch);border:1px solid var(--line);border-radius:var(--radius);
+    padding:12px 12px 10px;
+  }
+  .score-card .comp{
+    font-family:var(--mono);font-size:9px;color:var(--floodlight);letter-spacing:.06em;
+    text-transform:uppercase;margin-bottom:8px;display:block;
+  }
+  .score-row{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;margin-bottom:4px;color:var(--chalk);}
+  .score-row .team{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:96px;}
+  .score-row .num{font-family:var(--mono);font-weight:700;color:var(--floodlight);}
+  .score-card .when{font-family:var(--mono);font-size:9px;color:var(--chalk-dim);margin-top:6px;display:block;}
+  .scoreboard-empty{
+    font-family:var(--mono);font-size:11px;color:var(--chalk-dim);
+    border:1px dashed var(--line);border-radius:var(--radius);padding:14px;
+  }
+
   [hidden]{display:none !important;}
 
   /* ============ MOBILE ============ */
@@ -326,6 +361,8 @@
     .article-hero{height:180px;}
     .field-row{flex-direction:column;gap:0;}
     .sidebar{width:82%;max-width:280px;}
+    .score-card{width:130px;padding:10px 10px 8px;}
+    .score-row{font-size:11.5px;}
   }
   @media(min-width:481px) and (max-width:767px){
     .card-img{height:170px;}
@@ -393,6 +430,14 @@
 
   <!-- FEED VIEW -->
   <section id="feedView">
+    <div class="scoreboard-wrap">
+      <div class="scoreboard-head">
+        <h2 class="display" style="font-family:var(--mono);text-transform:uppercase;">Latest Results</h2>
+        <select id="leaguePicker"></select>
+      </div>
+      <div class="scoreboard" id="scoreboard"><div class="scoreboard-empty">Loading scores…</div></div>
+    </div>
+
     <div class="view-tabs">
       <button class="view-tab active" id="tabTrending">Trending</button>
       <button class="view-tab" id="tabLatest">Latest</button>
@@ -509,12 +554,12 @@
    mode (posts saved to your browser only) — nothing breaks.
    ========================================================= */
 const FIREBASE_CONFIG = {
-  apiKey: "PASTE_YOUR_API_KEY_HERE",
-  authDomain: "PASTE_YOUR_AUTH_DOMAIN_HERE",
-  projectId: "PASTE_YOUR_PROJECT_ID_HERE",
-  storageBucket: "PASTE_YOUR_STORAGE_BUCKET_HERE",
-  messagingSenderId: "PASTE_YOUR_SENDER_ID_HERE",
-  appId: "PASTE_YOUR_APP_ID_HERE"
+  apiKey: "AIzaSyC3voAMmdRAKjQNqPodo48bhpS-Hbk665U",
+  authDomain: "footy-inform.firebaseapp.com",
+  projectId: "footy-inform",
+  storageBucket: "footy-inform.firebasestorage.app",
+  messagingSenderId: "1012360360408",
+  appId: "1:1012360360408:web:05c6fce72031ea870782ad"
 };
 const FIREBASE_READY = !!(FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsWith('PASTE_'));
 let db = null;
@@ -1033,12 +1078,71 @@ document.getElementById('modeBadge').textContent = FIREBASE_READY ? '● Shared,
 document.getElementById('modeBadge').style.color = FIREBASE_READY ? 'var(--good)' : 'var(--chalk-dim)';
 
 /* =========================================================
+   SCOREBOARD — live results strip above Trending/Latest.
+   Uses TheSportsDB (thesportsdb.com), a free football data API.
+   The shared test key "3" works with zero signup, but it's a
+   public key everyone shares, so it's rate-limited and can be
+   slow at busy times.
+   To get your own free key: thesportsdb.com/api.php → sign up →
+   paste the key below instead of "3". Same upgrade pattern as
+   Firebase — works out of the box, better once you plug in a key.
+   ========================================================= */
+const SCORES_CONFIG = {
+  apiKey: "3",
+  leagues: {
+    "4328": "Premier League",
+    "4335": "La Liga",
+    "4332": "Serie A",
+    "4331": "Bundesliga",
+    "4334": "Ligue 1",
+    "4480": "Champions League"
+  },
+  defaultLeague: "4328"
+};
+
+function initScoreboard(){
+  const picker = document.getElementById('leaguePicker');
+  picker.innerHTML = Object.entries(SCORES_CONFIG.leagues)
+    .map(([id,name])=>`<option value="${id}" ${id===SCORES_CONFIG.defaultLeague?'selected':''}>${name}</option>`).join('');
+  picker.addEventListener('change', ()=> loadScores(picker.value));
+  loadScores(SCORES_CONFIG.defaultLeague);
+}
+
+async function loadScores(leagueId){
+  const box = document.getElementById('scoreboard');
+  box.innerHTML = `<div class="scoreboard-empty">Loading scores…</div>`;
+  try{
+    const url = `https://www.thesportsdb.com/api/v1/json/${SCORES_CONFIG.apiKey}/eventspastleague.php?id=${leagueId}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('Request failed');
+    const data = await res.json();
+    const events = (data.events || []).slice(0, 10);
+    if(events.length === 0){
+      box.innerHTML = `<div class="scoreboard-empty">No recent results found for this league right now.</div>`;
+      return;
+    }
+    box.innerHTML = events.map(ev=>`
+      <div class="score-card">
+        <span class="comp">${escapeHtml(ev.strLeague || '')}</span>
+        <div class="score-row"><span class="team">${escapeHtml(ev.strHomeTeam || '')}</span><span class="num">${ev.intHomeScore ?? '–'}</span></div>
+        <div class="score-row"><span class="team">${escapeHtml(ev.strAwayTeam || '')}</span><span class="num">${ev.intAwayScore ?? '–'}</span></div>
+        <span class="when">${ev.dateEvent || ''}</span>
+      </div>
+    `).join('');
+  }catch(err){
+    console.warn('Could not load scores:', err);
+    box.innerHTML = `<div class="scoreboard-empty">Scores are temporarily unavailable — the free test key is shared and rate-limited. Try again shortly, or add your own key in SCORES_CONFIG.</div>`;
+  }
+}
+
+/* =========================================================
    INIT
    ========================================================= */
 buildTicker();
 renderFeed();
 runSeoCheck();
 startPostsFeed();
+initScoreboard();
 </script>
 </body>
 </html>
