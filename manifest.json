@@ -1,0 +1,22 @@
+{
+  "name": "Footy Inform",
+  "short_name": "Footy Inform",
+  "description": "Club football news, national team news, and transfer gossip.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0E2A1B",
+  "theme_color": "#0E2A1B",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%230E2A1B'/%3E%3Ctext x='96' y='118' font-family='Georgia,serif' font-size='72' font-weight='700' fill='%23FFB627' text-anchor='middle'%3EFI%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%230E2A1B'/%3E%3Ctext x='256' y='315' font-family='Georgia,serif' font-size='192' font-weight='700' fill='%23FFB627' text-anchor='middle'%3EFI%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

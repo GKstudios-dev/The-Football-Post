@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Footy Inform — Club, National Team &amp; Transfer News</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0E2A1B">
 <meta name="description" content="Footy Inform — fast, no-nonsense football coverage: club news, national team news, and transfer gossip.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -108,10 +110,11 @@
   .ticker-track{
     display:inline-block;
     padding-left:100%;
-    animation:scroll-ticker 32s linear infinite;
+    animation:scroll-ticker 90s linear infinite;
     font-family:var(--mono);font-size:12px;color:var(--floodlight);
     padding-top:7px;padding-bottom:7px;
   }
+  .ticker:hover .ticker-track{animation-play-state:paused;}
   .ticker-track span{margin-right:40px;color:var(--chalk-dim);}
   .ticker-track span b{color:var(--floodlight);font-weight:700;}
   @keyframes scroll-ticker{from{transform:translateX(0);}to{transform:translateX(-100%);}}
@@ -372,6 +375,41 @@
     padding:16px;width:220px;box-shadow:0 14px 34px rgba(0,0,0,.45);
   }
 
+  /* ============ RICH TEXT EDITOR ============ */
+  .rich-toolbar{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;}
+  .rich-toolbar button{
+    background:var(--pitch-dark);border:1px solid var(--line);color:var(--chalk);
+    padding:6px 11px;border-radius:var(--radius);font-family:var(--body);font-size:13px;
+  }
+  .rich-toolbar button:hover{border-color:var(--floodlight);}
+  .rich-editor{
+    width:100%;min-height:220px;background:var(--pitch);border:1px solid var(--line);color:var(--chalk);
+    padding:12px 14px;font-size:16px;line-height:1.6;border-radius:var(--radius);
+    font-family:'Times New Roman', Times, serif;
+  }
+  .rich-editor:empty:before{content:attr(data-placeholder);color:var(--chalk-dim);}
+  .rich-editor h2{font-family:var(--display);font-size:19px;color:var(--floodlight);margin:14px 0 8px;}
+  .rich-editor ul{margin:8px 0 8px 22px;}
+  .rich-editor p{margin:0 0 10px;}
+
+  /* ============ DASHBOARD ============ */
+  .dash-row{
+    display:flex;align-items:center;gap:12px;
+    background:var(--pitch);border:1px solid var(--line);border-radius:var(--radius);
+    padding:12px 14px;margin-bottom:8px;
+  }
+  .dash-row .dash-thumb{width:52px;height:52px;object-fit:cover;border-radius:var(--radius);flex:none;}
+  .dash-row .dash-info{flex:1;min-width:0;}
+  .dash-row .dash-title{font-size:14px;color:var(--chalk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .dash-row .dash-meta{font-family:var(--mono);font-size:10px;color:var(--chalk-dim);margin-top:2px;}
+  .dash-row .dash-actions{display:flex;gap:6px;flex:none;}
+  .dash-row .dash-actions button{
+    font-family:var(--mono);font-size:10px;padding:6px 10px;border-radius:var(--radius);
+    border:1px solid var(--line);background:var(--pitch-dark);color:var(--chalk-dim);
+  }
+  .dash-row .dash-actions button.edit-btn:hover{border-color:var(--floodlight);color:var(--floodlight);}
+  .dash-row .dash-actions button.del-btn:hover{border-color:var(--bad);color:var(--bad);}
+
   [hidden]{display:none !important;}
 
   /* ============ MOBILE ============ */
@@ -418,9 +456,11 @@
     <span class="mark" id="brandMark">Footy <em>Inform</em></span>
     <span class="tagline">CLUB · NATIONAL TEAM · TRANSFERS</span>
   </div>
-  <span id="modeBadge" style="font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--chalk-dim);border:1px solid var(--line);padding:5px 8px;border-radius:2px;text-transform:uppercase;"></span>
+  <button class="write-btn" id="installBtn" hidden style="border-color:var(--floodlight-dim);">Install App</button>
+  <span id="modeBadge" hidden style="font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--chalk-dim);border:1px solid var(--line);padding:5px 8px;border-radius:2px;text-transform:uppercase;"></span>
   <button class="write-btn" id="adminBtn">Admin</button>
   <button class="write-btn" id="openWriter" hidden>+ New Post</button>
+  <button class="write-btn" id="openDashboard" hidden style="margin-left:6px;">Dashboard</button>
 </header>
 
 <div class="ticker">
@@ -454,7 +494,9 @@
   <div class="nav-section-label">Coming soon</div>
   <span class="nav-item disabled">Tactics Board</span>
   <span class="nav-item disabled">Fan Culture</span>
-  <div class="nav-more">Add more tabs any time — duplicate a nav-item in the HTML and give it a new data-cat, then add matching posts in the script.</div>
+  <!-- To add more categories later: duplicate a nav-item above with a
+       new data-cat, then add matching posts with that category in the
+       SAMPLE_POSTS / posts data below. -->
 
   <button class="sidebar-write" id="sidebarWrite" hidden>+ Write a new post</button>
 </nav>
@@ -511,7 +553,7 @@
   <!-- WRITER VIEW -->
   <section id="writerView" class="writer" hidden>
     <button class="back-btn" id="backFromWriter">&larr; Cancel</button>
-    <h2 class="display">Write a new post</h2>
+    <h2 class="display" id="writerHeading">Write a new post</h2>
     <p class="sub">Fill this in and check the SEO panel before you publish — aim for all green.</p>
 
     <div class="field-row">
@@ -541,15 +583,12 @@
       <div class="char-count" id="metaCount">0 characters</div>
     </div>
 
-    <div class="field-row">
-      <div class="field">
-        <label for="f_image">Image URL</label>
-        <input id="f_image" type="text" placeholder="https://...">
-      </div>
-      <div class="field">
-        <label for="f_alt">Image alt text</label>
-        <input id="f_alt" type="text" placeholder="Describe the image">
-      </div>
+    <div class="field">
+      <label for="f_image_file">Image</label>
+      <input id="f_image_file" type="file" accept="image/*">
+      <img id="f_image_preview" hidden style="width:100%;max-height:220px;object-fit:cover;border-radius:var(--radius);margin-top:10px;">
+      <label for="f_alt" style="margin-top:12px;">Image alt text</label>
+      <input id="f_alt" type="text" placeholder="Describe the image">
     </div>
 
     <div class="field">
@@ -558,8 +597,16 @@
     </div>
 
     <div class="field">
-      <label for="f_body">Article body — start a line with ## for a subheading</label>
-      <textarea id="f_body" style="min-height:220px" placeholder="Write the full article here..."></textarea>
+      <label for="f_body_rich">Article body</label>
+      <div class="rich-toolbar">
+        <button type="button" data-cmd="bold"><b>B</b></button>
+        <button type="button" data-cmd="italic"><i>I</i></button>
+        <button type="button" data-cmd="underline"><u>U</u></button>
+        <button type="button" data-cmd="formatBlock" data-value="H2">Heading</button>
+        <button type="button" data-cmd="formatBlock" data-value="P">Normal</button>
+        <button type="button" data-cmd="insertUnorderedList">• List</button>
+      </div>
+      <div id="f_body_rich" class="rich-editor" contenteditable="true" data-placeholder="Write the full article here..."></div>
       <div class="char-count" id="bodyCount">0 words</div>
     </div>
 
@@ -581,11 +628,18 @@
     <button class="cancel-btn" id="cancelWriter">Cancel</button>
   </section>
 
+  <!-- ADMIN DASHBOARD: list + edit/delete your own posts -->
+  <section id="dashboardView" hidden>
+    <button class="back-btn" id="backFromDashboard">&larr; Back</button>
+    <h2 class="display" style="font-size:22px;margin-bottom:14px;">Manage posts</h2>
+    <div id="dashboardList"></div>
+  </section>
+
 </main>
 
 <footer>
   <span id="footerText">© <span id="footerYear">2026</span> <span id="footerSiteName">FOOTY INFORM</span>. All rights reserved.</span><br>
-  <span style="opacity:.7">Check the badge next to "+ New Post" — it shows whether posts are shared with every visitor or saved to this browser only. <button id="resetContent" style="background:none;border:none;color:var(--floodlight);font-family:var(--mono);font-size:11px;text-decoration:underline;cursor:pointer;padding:0;">Reset to sample posts</button></span>
+  <span id="footerAdminNote" style="opacity:.7" hidden>Check the badge next to "+ New Post" — it shows whether posts are shared with every visitor or saved to this browser only. <button id="resetContent" style="background:none;border:none;color:var(--floodlight);font-family:var(--mono);font-size:11px;text-decoration:underline;cursor:pointer;padding:0;">Reset to sample posts</button></span>
 </footer>
 
 <!-- Shared backend (optional). Free to set up — see notes in the script below.
@@ -784,6 +838,18 @@ function addPost(newPost){
   }
 }
 
+function updatePost(id, updatedFields){
+  if(FIREBASE_READY){
+    db.collection('posts').doc(id).update(updatedFields).catch(err=>alert('Could not save changes — check your Firebase setup.\n\n'+err.message));
+  } else {
+    const idx = posts.findIndex(p=>p.id===id);
+    if(idx > -1) posts[idx] = { ...posts[idx], ...updatedFields };
+    saveLocalPosts();
+    buildTicker();
+    renderFeed();
+  }
+}
+
 function deletePost(id){
   if(!confirm('Delete this post? This cannot be undone.')) return;
   if(FIREBASE_READY){
@@ -856,28 +922,113 @@ tabResults.addEventListener('click', ()=>{ activateTab(tabResults); postsPane.hi
 /* =========================================================
    VIEW SWITCHING
    ========================================================= */
-function showFeed(){
-  document.getElementById('feedView').hidden = false;
-  document.getElementById('articleView').hidden = true;
-  document.getElementById('writerView').hidden = true;
-}
-function showArticle(){
-  document.getElementById('feedView').hidden = true;
-  document.getElementById('articleView').hidden = false;
-  document.getElementById('writerView').hidden = true;
-  window.scrollTo(0,0);
-}
-function showWriter(){
+function hideAllViews(){
   document.getElementById('feedView').hidden = true;
   document.getElementById('articleView').hidden = true;
-  document.getElementById('writerView').hidden = false;
-  window.scrollTo(0,0);
+  document.getElementById('writerView').hidden = true;
+  document.getElementById('dashboardView').hidden = true;
 }
+function showFeed(){ hideAllViews(); document.getElementById('feedView').hidden = false; }
+function showArticle(){ hideAllViews(); document.getElementById('articleView').hidden = false; window.scrollTo(0,0); }
+function showWriter(){ hideAllViews(); document.getElementById('writerView').hidden = false; window.scrollTo(0,0); }
+function showDashboard(){ hideAllViews(); document.getElementById('dashboardView').hidden = false; window.scrollTo(0,0); renderDashboard(); }
+
 document.getElementById('backToFeed').addEventListener('click', ()=>{ showFeed(); });
-document.getElementById('openWriter').addEventListener('click', showWriter);
-document.getElementById('sidebarWrite').addEventListener('click', ()=>{ closeSidebar(); showWriter(); });
+document.getElementById('openWriter').addEventListener('click', ()=>{ resetWriterForm(); showWriter(); });
+document.getElementById('sidebarWrite').addEventListener('click', ()=>{ closeSidebar(); resetWriterForm(); showWriter(); });
 document.getElementById('backFromWriter').addEventListener('click', showFeed);
 document.getElementById('cancelWriter').addEventListener('click', showFeed);
+document.getElementById('openDashboard').addEventListener('click', showDashboard);
+document.getElementById('backFromDashboard').addEventListener('click', showFeed);
+
+/* =========================================================
+   RICH TEXT TOOLBAR
+   ========================================================= */
+document.querySelectorAll('.rich-toolbar button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.getElementById('f_body_rich').focus();
+    document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null);
+    runSeoCheck();
+  });
+});
+
+/* =========================================================
+   IMAGE UPLOAD — resized/compressed to a data URL client-side
+   (no file storage backend, so the image travels inside the
+   post itself; kept under ~1200px wide to stay well within
+   Firestore's 1MB-per-document limit).
+   ========================================================= */
+let currentImageDataUrl = null;
+document.getElementById('f_image_file').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const maxW = 1200;
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      currentImageDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      const preview = document.getElementById('f_image_preview');
+      preview.src = currentImageDataUrl;
+      preview.hidden = false;
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+/* =========================================================
+   WRITER FORM — shared between "new post" and "edit post"
+   ========================================================= */
+let editingPostId = null;
+
+function resetWriterForm(){
+  editingPostId = null;
+  document.getElementById('writerHeading').textContent = 'Write a new post';
+  document.getElementById('publishBtn').textContent = 'Publish post';
+  ['f_title','f_meta','f_keyword','f_alt','f_snippet'].forEach(id=> document.getElementById(id).value='');
+  document.getElementById('f_body_rich').innerHTML = '';
+  document.getElementById('f_category').value = 'club';
+  document.getElementById('f_trending').checked = false;
+  document.getElementById('f_image_file').value = '';
+  document.getElementById('f_image_preview').hidden = true;
+  currentImageDataUrl = null;
+  runSeoCheck();
+}
+
+function loadPostIntoWriter(post){
+  editingPostId = post.id;
+  document.getElementById('writerHeading').textContent = 'Edit post';
+  document.getElementById('publishBtn').textContent = 'Save changes';
+  document.getElementById('f_title').value = post.title || '';
+  document.getElementById('f_meta').value = post.metaDescription || post.snippet || '';
+  document.getElementById('f_keyword').value = post.focusKeyword || '';
+  document.getElementById('f_alt').value = post.imageAlt || '';
+  document.getElementById('f_snippet').value = post.snippet || '';
+  document.getElementById('f_category').value = post.category || 'club';
+  document.getElementById('f_trending').checked = !!post.trending;
+  currentImageDataUrl = post.image || null;
+  const preview = document.getElementById('f_image_preview');
+  if(post.image){ preview.src = post.image; preview.hidden = false; } else { preview.hidden = true; }
+  document.getElementById('f_body_rich').innerHTML = bodyToHtml(post.body);
+  runSeoCheck();
+}
+
+// Body can be either a legacy array (## heading / paragraph strings from
+// the original sample posts) or a plain HTML string (from the rich editor).
+function bodyToHtml(body){
+  if(!body) return '';
+  if(Array.isArray(body)){
+    return body.map(block=> block.startsWith('## ') ? `<h2>${escapeHtml(block.slice(3))}</h2>` : `<p>${escapeHtml(block)}</p>`).join('');
+  }
+  return body;
+}
 
 /* =========================================================
    ADMIN GATE — regular readers never see "Admin," "+ New Post,"
@@ -894,6 +1045,7 @@ document.getElementById('cancelWriter').addEventListener('click', showFeed);
    ========================================================= */
 const openWriterBtn = document.getElementById('openWriter');
 const sidebarWriteBtn = document.getElementById('sidebarWrite');
+const openDashboardBtn = document.getElementById('openDashboard');
 const adminBtn = document.getElementById('adminBtn');
 const adminPanel = document.getElementById('adminPanel');
 
@@ -903,22 +1055,28 @@ function isAdminUrl(){
 function setWriteControlsVisible(visible){
   openWriterBtn.hidden = !visible;
   sidebarWriteBtn.hidden = !visible;
+  openDashboardBtn.hidden = !visible;
 }
 function isAdmin(){
   return !FIREBASE_READY || !!(FIREBASE_READY && firebase.auth().currentUser);
 }
+function setAdminOnlyUiVisible(visible){
+  adminBtn.hidden = !visible;
+  document.getElementById('modeBadge').hidden = !visible;
+  document.getElementById('footerAdminNote').hidden = !visible;
+}
 
 if(FIREBASE_READY){
   setWriteControlsVisible(false);
-  adminBtn.hidden = !isAdminUrl();
+  setAdminOnlyUiVisible(isAdminUrl());
   firebase.auth().onAuthStateChanged(user=>{
     setWriteControlsVisible(!!user);
-    adminBtn.hidden = !(user || isAdminUrl());
+    setAdminOnlyUiVisible(!!user || isAdminUrl());
     adminBtn.textContent = user ? 'Sign out' : 'Admin';
   });
 } else {
   setWriteControlsVisible(true);
-  adminBtn.hidden = true; // nothing to log into locally
+  setAdminOnlyUiVisible(false); // local-only mode: nothing to log into, badge/note not relevant to readers either
 }
 
 adminBtn.addEventListener('click', ()=>{
@@ -1011,10 +1169,7 @@ function renderFeed(){
 function openArticle(id){
   const p = posts.find(x=>x.id===id);
   if(!p) return;
-  const bodyHtml = p.body.map(block=>{
-    if(block.startsWith('## ')) return `<h2>${escapeHtml(block.slice(3))}</h2>`;
-    return `<p>${escapeHtml(block)}</p>`;
-  }).join('');
+  const bodyHtml = bodyToHtml(p.body);
   document.getElementById('articleContent').innerHTML = `
     <img class="article-hero" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}">
     <div class="article-meta">
@@ -1023,8 +1178,13 @@ function openArticle(id){
     </div>
     <h1>${escapeHtml(p.title)}</h1>
     <div class="article-body">${bodyHtml}</div>
-    ${isAdmin() ? `<button class="cancel-btn" id="deletePostBtn" style="margin-top:24px;">Delete this post</button>` : ''}
+    ${isAdmin() ? `
+      <button class="publish-btn" id="editPostBtn" style="margin-top:24px;">Edit this post</button>
+      <button class="cancel-btn" id="deletePostBtn" style="margin-top:24px;margin-left:10px;">Delete this post</button>
+    ` : ''}
   `;
+  const editBtn = document.getElementById('editPostBtn');
+  if(editBtn) editBtn.addEventListener('click', ()=>{ loadPostIntoWriter(p); showWriter(); });
   const delBtn = document.getElementById('deletePostBtn');
   if(delBtn) delBtn.addEventListener('click', ()=> deletePost(p.id));
   showArticle();
@@ -1045,8 +1205,9 @@ function buildTicker(){
 /* =========================================================
    SEO CHECKER
    ========================================================= */
-const seoFields = ['f_title','f_meta','f_keyword','f_image','f_alt','f_body','f_snippet'];
+const seoFields = ['f_title','f_meta','f_keyword','f_alt','f_snippet'];
 seoFields.forEach(id=> document.getElementById(id).addEventListener('input', runSeoCheck));
+document.getElementById('f_body_rich').addEventListener('input', runSeoCheck);
 
 document.getElementById('f_title').addEventListener('input', (e)=>{
   document.getElementById('titleCount').textContent = e.target.value.length + ' characters';
@@ -1054,8 +1215,8 @@ document.getElementById('f_title').addEventListener('input', (e)=>{
 document.getElementById('f_meta').addEventListener('input', (e)=>{
   document.getElementById('metaCount').textContent = e.target.value.length + ' characters';
 });
-document.getElementById('f_body').addEventListener('input', (e)=>{
-  const words = e.target.value.trim().split(/\s+/).filter(Boolean).length;
+document.getElementById('f_body_rich').addEventListener('input', ()=>{
+  const words = wordCount(document.getElementById('f_body_rich').innerText);
   document.getElementById('bodyCount').textContent = words + ' words';
 });
 
@@ -1066,7 +1227,7 @@ function runSeoCheck(){
   const meta = document.getElementById('f_meta').value.trim();
   const keyword = document.getElementById('f_keyword').value.trim().toLowerCase();
   const alt = document.getElementById('f_alt').value.trim();
-  const body = document.getElementById('f_body').value.trim();
+  const body = document.getElementById('f_body_rich').innerText.trim();
   const bodyLower = body.toLowerCase();
 
   const checks = [];
@@ -1121,9 +1282,9 @@ function runSeoCheck(){
 
   // Subheading present
   checks.push(scoreCheck(
-    /^##\s/m.test(body) ? 'good' : 'warn',
+    document.getElementById('f_body_rich').querySelector('h2') ? 'good' : 'warn',
     'Subheadings',
-    /^##\s/m.test(body) ? 'At least one subheading found.' : 'Add a line starting with "## " to break up the text.'
+    document.getElementById('f_body_rich').querySelector('h2') ? 'At least one subheading found.' : 'Use the "Heading" button in the toolbar to break up the text.'
   ));
 
   // Alt text
@@ -1162,30 +1323,74 @@ document.getElementById('publishBtn').addEventListener('click', ()=>{
   const title = document.getElementById('f_title').value.trim();
   const meta = document.getElementById('f_meta').value.trim();
   const snippet = document.getElementById('f_snippet').value.trim() || meta;
-  const body = document.getElementById('f_body').value.trim();
-  const image = document.getElementById('f_image').value.trim() || 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?q=80&w=1200&auto=format&fit=crop';
+  const bodyHtml = document.getElementById('f_body_rich').innerHTML.trim();
+  const image = currentImageDataUrl || 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?q=80&w=1200&auto=format&fit=crop';
   const alt = document.getElementById('f_alt').value.trim();
   const category = document.getElementById('f_category').value;
   const trending = document.getElementById('f_trending').checked;
+  const focusKeyword = document.getElementById('f_keyword').value.trim();
 
-  if(!title || !body || !meta){ return; }
+  if(!title || !bodyHtml || !meta){ return; }
 
-  const newPost = {
+  const postData = {
     category, trending,
-    title, snippet, image, imageAlt: alt,
-    date: new Date().toISOString().slice(0,10),
-    body: body.split(/\n{2,}/).map(b=>b.trim()).filter(Boolean)
+    title, snippet, image, imageAlt: alt, metaDescription: meta, focusKeyword,
+    body: bodyHtml
   };
-  addPost(newPost);
 
-  // reset form
-  ['f_title','f_meta','f_keyword','f_image','f_alt','f_snippet','f_body'].forEach(id=> document.getElementById(id).value='');
-  document.getElementById('f_trending').checked = false;
-  runSeoCheck();
-  buildTicker();
-  renderFeed();
+  if(editingPostId){
+    updatePost(editingPostId, postData);
+  } else {
+    postData.date = new Date().toISOString().slice(0,10);
+    addPost(postData);
+  }
+
+  resetWriterForm();
   showFeed();
 });
+
+/* =========================================================
+   ADMIN DASHBOARD — list, edit, delete your own posts
+   ========================================================= */
+function renderDashboard(){
+  const box = document.getElementById('dashboardList');
+  if(!posts.length){
+    box.innerHTML = `<div class="scoreboard-empty">No posts yet — use "+ New Post" to write your first one.</div>`;
+    return;
+  }
+  const sorted = posts.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
+  box.innerHTML = sorted.map(p=>`
+    <div class="dash-row">
+      <img class="dash-thumb" src="${p.image}" alt="">
+      <div class="dash-info">
+        <div class="dash-title">${escapeHtml(p.title)}</div>
+        <div class="dash-meta">${CATEGORY_LABELS[p.category]||p.category} · ${fmtDate(p.date)}</div>
+      </div>
+      <div class="dash-actions">
+        <button class="edit-btn" data-id="${p.id}">Edit</button>
+        <button class="del-btn" data-id="${p.id}">Delete</button>
+      </div>
+    </div>
+  `).join('');
+  box.querySelectorAll('.edit-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const post = posts.find(p=>p.id===btn.dataset.id);
+      if(post){ loadPostIntoWriter(post); showWriter(); }
+    });
+  });
+  box.querySelectorAll('.del-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(!confirm('Delete this post? This cannot be undone.')) return;
+      if(FIREBASE_READY){
+        db.collection('posts').doc(btn.dataset.id).delete().then(renderDashboard).catch(err=>alert('Could not delete: '+err.message));
+      } else {
+        posts = posts.filter(p=>p.id!==btn.dataset.id);
+        saveLocalPosts();
+        buildTicker(); renderFeed(); renderDashboard();
+      }
+    });
+  });
+}
 
 /* =========================================================
    FOOTER / BRAND FROM CONFIG
@@ -1237,21 +1442,30 @@ const FOOTBALL_DATA_CONFIG = {
   apiKey: "93d5bdf3f3a242da97724114509eeed5"
 };
 const FOOTBALL_DATA_READY = !!(FOOTBALL_DATA_CONFIG.apiKey && !FOOTBALL_DATA_CONFIG.apiKey.startsWith('PASTE_'));
-const SPORTSDB_CONFIG = { apiKey: "3" };
+const SPORTSDB_CONFIG = { apiKey: "123" }; // TheSportsDB's current free test key (was "3", they changed it).
+// Honest limitation: TheSportsDB's free tier caps eventsseason.php at 15
+// matches per competition — it will never return a full season, only the
+// first 15 it finds. A $9/month key (thesportsdb.com, via Patreon) raises
+// that to 3000. See the note near RESULTS_CONFIG above for the plan.
 
 const RESULTS_CONFIG = {
   season: "2025-2026",       // domestic league season format (football-data ignores this, uses current season automatically)
   worldCupSeason: "2026",    // TheSportsDB-style single year, used only by sportsdb-backed comps
   competitions: [
-    { id: "PL",  name: "Premier League",     provider: "football-data", hasTable: true },
-    { id: "BL1", name: "Bundesliga",         provider: "football-data", hasTable: true },
-    { id: "PD",  name: "La Liga",            provider: "football-data", hasTable: true },
-    { id: "SA",  name: "Serie A",            provider: "football-data", hasTable: true },
-    { id: "FL1", name: "Ligue 1",            provider: "football-data", hasTable: true },
-    { id: "CL",  name: "Champions League",   provider: "football-data", hasTable: false },
-    { id: "4481", name: "Europa League",     provider: "sportsdb", hasTable: false },
-    { id: "4497", name: "Conference League", provider: "sportsdb", hasTable: false },
-    { id: "WC",  name: "World Cup",          provider: "football-data", hasTable: false, isWorldCup: true }
+    // NOTE: these were pointed at football-data.org, but that account is
+    // currently stuck returning a CORS header locked to "http://localhost"
+    // (see the email-support note above). Routed through TheSportsDB for
+    // now so the site keeps working — switch provider back to
+    // "football-data" once football-data.org confirms CORS is fixed.
+    { id: "4328", name: "Premier League",     provider: "sportsdb", hasTable: true },
+    { id: "4331", name: "Bundesliga",         provider: "sportsdb", hasTable: true },
+    { id: "4335", name: "La Liga",            provider: "sportsdb", hasTable: true },
+    { id: "4332", name: "Serie A",            provider: "sportsdb", hasTable: true },
+    { id: "4334", name: "Ligue 1",            provider: "sportsdb", hasTable: true },
+    { id: "4480", name: "Champions League",   provider: "sportsdb", hasTable: false },
+    { id: "4481", name: "Europa League",      provider: "sportsdb", hasTable: false },
+    { id: "4497", name: "Conference League",  provider: "sportsdb", hasTable: false },
+    { id: "4429", name: "World Cup",          provider: "sportsdb", hasTable: false, isWorldCup: true }
   ]
 };
 
@@ -1444,9 +1658,22 @@ async function renderLive(box, comp){
 async function renderTable(box, comp){
   try{
     if(!tableCache[comp.id]){
-      const data = await fetchJSON(`https://api.football-data.org/v4/competitions/${comp.id}/standings`, { 'X-Auth-Token': FOOTBALL_DATA_CONFIG.apiKey });
-      const total = (data.standings || []).find(s=>s.type === 'TOTAL');
-      tableCache[comp.id] = total ? total.table : [];
+      if(comp.provider === 'football-data'){
+        const data = await fetchJSON(`https://api.football-data.org/v4/competitions/${comp.id}/standings`, { 'X-Auth-Token': FOOTBALL_DATA_CONFIG.apiKey });
+        const total = (data.standings || []).find(s=>s.type === 'TOTAL');
+        tableCache[comp.id] = (total ? total.table : []).map(row=>({
+          rank: row.position, team: row.team?.shortName || row.team?.name || '',
+          played: row.playedGames, win: row.won, draw: row.draw, loss: row.lost,
+          gd: row.goalDifference, pts: row.points
+        }));
+      } else {
+        const data = await fetchJSON(`https://www.thesportsdb.com/api/v1/json/${SPORTSDB_CONFIG.apiKey}/lookuptable.php?l=${comp.id}&s=${RESULTS_CONFIG.season}`);
+        tableCache[comp.id] = (data.table || []).map(row=>({
+          rank: row.intRank, team: row.strTeam,
+          played: row.intPlayed, win: row.intWin, draw: row.intDraw, loss: row.intLoss,
+          gd: row.intGoalDifference, pts: row.intPoints
+        }));
+      }
     }
     const table = tableCache[comp.id];
     if(!table.length){
@@ -1462,14 +1689,14 @@ async function renderTable(box, comp){
         <tbody>
           ${table.map(row=>`
             <tr>
-              <td class="num">${row.position}</td>
-              <td class="team">${escapeHtml(row.team?.shortName || row.team?.name || '')}</td>
-              <td class="num">${row.playedGames}</td>
-              <td class="num">${row.won}</td>
+              <td class="num">${row.rank}</td>
+              <td class="team">${escapeHtml(row.team)}</td>
+              <td class="num">${row.played}</td>
+              <td class="num">${row.win}</td>
               <td class="num">${row.draw}</td>
-              <td class="num">${row.lost}</td>
-              <td class="num">${row.goalDifference}</td>
-              <td class="num">${row.points}</td>
+              <td class="num">${row.loss}</td>
+              <td class="num">${row.gd}</td>
+              <td class="num">${row.pts}</td>
             </tr>`).join('')}
         </tbody>
       </table>`;
@@ -1478,6 +1705,35 @@ async function renderTable(box, comp){
     box.innerHTML = `<div class="scoreboard-empty">Table temporarily unavailable — check your football-data.org key, or the free tier may be rate-limited.</div>`;
   }
 }
+
+/* =========================================================
+   INSTALLABLE APP (PWA)
+   Needs manifest.json and sw.js sitting next to this file in
+   the same repo — upload all three. Chrome/Edge/Android show the
+   "Install App" button automatically once those are in place;
+   Safari on iPhone/iPad doesn't support this prompt at all — on
+   iOS, visitors add it via Share → "Add to Home Screen" manually,
+   there's no code workaround for that Apple restriction.
+   ========================================================= */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(err=> console.warn('Service worker failed to register:', err));
+  });
+}
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  document.getElementById('installBtn').hidden = false;
+});
+document.getElementById('installBtn').addEventListener('click', async ()=>{
+  if(!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  document.getElementById('installBtn').hidden = true;
+});
+window.addEventListener('appinstalled', ()=>{ document.getElementById('installBtn').hidden = true; });
 
 /* =========================================================
    INIT
