@@ -230,7 +230,7 @@
   .card-meta .dot{color:var(--ink-dim);}
   .card-meta .trending-flag{color:var(--bad);font-weight:700;}
   .card h3{font-size:21px;margin:0 0 8px;line-height:1.18;}
-  .card p.snippet{margin:0;color:var(--ink-dim);font-size:14.5px;line-height:1.55;}
+  .card p.snippet{margin:0;color:var(--ink-dim);font-size:15.5px;line-height:1.6;}
   .read-more{display:inline-block;margin-top:10px;font-family:var(--mono);font-size:11px;color:#1F4F32;text-decoration:underline;}
 
   .empty-state{
@@ -238,6 +238,61 @@
     border:1px dashed var(--line);border-radius:var(--radius);
     font-family:var(--mono);font-size:12px;
   }
+
+  /* ============ HORIZONTAL CARD (mobile-app style) ============ */
+  .card-h{
+    display:flex;gap:12px;background:var(--card-bg);color:var(--ink);
+    border-radius:var(--radius);overflow:hidden;margin-bottom:12px;
+    border:1px solid rgba(0,0,0,.06);padding:10px;
+    transition:transform .18s, box-shadow .18s;
+  }
+  .card-h:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(0,0,0,.3);}
+  .card-h-img{width:92px;height:92px;object-fit:cover;border-radius:6px;flex:none;background:var(--pitch-light);}
+  .card-h-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;}
+  .card-h-meta{
+    display:flex;align-items:center;gap:6px;margin-bottom:4px;
+    font-family:var(--mono);font-size:9px;letter-spacing:.04em;text-transform:uppercase;
+  }
+  .card-h h3{
+    font-size:15.5px;margin:0 0 4px;line-height:1.28;font-weight:700;
+    font-family:var(--body);text-transform:none;letter-spacing:0;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .snippet-h{
+    margin:0;color:var(--ink-dim);font-size:13px;line-height:1.4;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+
+  /* ============ TRENDING CAROUSEL ============ */
+  .section-label{
+    font-family:var(--display);font-size:16px;color:var(--chalk);
+    margin:24px 0 12px;letter-spacing:.02em;
+  }
+  .trending-carousel{position:relative;margin-bottom:6px;}
+  .trending-track{position:relative;height:280px;border-radius:12px;overflow:hidden;}
+  .trending-slide{
+    position:absolute;inset:0;background-size:cover;background-position:center;
+    border-radius:12px;opacity:0;transition:opacity .6s ease;pointer-events:none;
+    display:block;
+  }
+  .trending-slide.active{opacity:1;pointer-events:auto;}
+  .trending-slide-overlay{
+    position:absolute;left:0;right:0;bottom:0;padding:18px;
+    background:linear-gradient(to top, rgba(0,0,0,.82), transparent);
+    color:#fff;
+  }
+  .trending-slide-overlay .badge{
+    display:inline-block;background:var(--floodlight);color:var(--ink);
+    font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;
+    letter-spacing:.05em;margin-bottom:8px;
+  }
+  .trending-slide-overlay h3{
+    font-size:19px;margin:0;line-height:1.25;
+    text-transform:none;letter-spacing:0;font-family:var(--body);font-weight:700;
+  }
+  .trending-dots{display:flex;justify-content:center;gap:5px;margin-top:10px;}
+  .trending-dot{width:6px;height:6px;border-radius:3px;background:var(--line);transition:width .3s, background .3s;}
+  .trending-dot.active{width:18px;background:var(--floodlight);}
 
   /* ============ ARTICLE VIEW ============ */
   .back-btn{
@@ -250,7 +305,7 @@
   .article-hero{width:100%;height:260px;object-fit:cover;border-radius:var(--radius);margin-bottom:18px;}
   .article-meta{font-family:var(--mono);font-size:11px;color:var(--chalk-dim);margin-bottom:8px;display:flex;gap:10px;align-items:center;}
   .article h1{font-size:32px;line-height:1.1;margin:0 0 16px;}
-  .article-body{font-size:16px;line-height:1.75;color:var(--chalk);}
+  .article-body{font-size:19px;line-height:1.85;color:var(--chalk);}
   .article-body p{margin:0 0 18px;}
   .article-body h2{font-family:var(--display);font-size:20px;margin:26px 0 12px;color:var(--floodlight);}
   .article-body img{max-width:100%;height:auto;border-radius:var(--radius);margin:14px 0;display:block;}
@@ -385,8 +440,8 @@
   .rich-toolbar button:hover{border-color:var(--floodlight);}
   .rich-editor{
     width:100%;min-height:220px;background:var(--pitch);border:1px solid var(--line);color:var(--chalk);
-    padding:12px 14px;font-size:16px;line-height:1.6;border-radius:var(--radius);
-    font-family:'Times New Roman', Times, serif;
+    padding:12px 14px;font-size:18px;line-height:1.75;border-radius:var(--radius);
+    font-family:var(--body);
   }
   .rich-editor:empty:before{content:attr(data-placeholder);color:var(--chalk-dim);}
   .rich-editor h2{font-family:var(--display);font-size:19px;color:var(--floodlight);margin:14px 0 8px;}
@@ -1163,9 +1218,74 @@ function fmtDate(iso){
   return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
 }
 
+let carouselTimer = null;
+function stopCarousel(){
+  if(carouselTimer){ clearInterval(carouselTimer); carouselTimer = null; }
+}
+
+function cardHtml(p){
+  return `
+    <a class="card-h" href="#" data-id="${p.id}">
+      <img class="card-h-img" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}" loading="lazy">
+      <div class="card-h-body">
+        <div class="card-h-meta">
+          <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
+          <span class="dot">&middot;</span>
+          <span>${fmtDate(p.date)}</span>
+        </div>
+        <h3>${escapeHtml(p.title)}</h3>
+        <p class="snippet-h">${escapeHtml(p.snippet)}</p>
+      </div>
+    </a>`;
+}
+
+function attachCardHandlers(container){
+  container.querySelectorAll('.card-h').forEach(card=>{
+    card.addEventListener('click', (e)=>{
+      e.preventDefault();
+      openArticle(card.dataset.id);
+    });
+  });
+}
+
+function buildCarouselHtml(list){
+  if(!list.length) return '';
+  return `
+    <div class="trending-carousel">
+      <div class="trending-track">
+        ${list.map((p,i)=>`
+          <a href="#" class="trending-slide ${i===0?'active':''}" data-id="${p.id}" style="background-image:url('${p.image}')">
+            <div class="trending-slide-overlay">
+              <span class="badge">TRENDING</span>
+              <h3>${escapeHtml(p.title)}</h3>
+            </div>
+          </a>`).join('')}
+      </div>
+      ${list.length>1 ? `<div class="trending-dots">
+        ${list.map((_,i)=>`<span class="trending-dot ${i===0?'active':''}"></span>`).join('')}
+      </div>` : ''}
+    </div>`;
+}
+
+function startCarousel(count){
+  if(count<=1) return;
+  let idx = 0;
+  carouselTimer = setInterval(()=>{
+    const slides = document.querySelectorAll('.trending-slide');
+    const dots = document.querySelectorAll('.trending-dot');
+    if(!slides.length){ stopCarousel(); return; }
+    slides[idx].classList.remove('active');
+    dots[idx]?.classList.remove('active');
+    idx = (idx+1) % slides.length;
+    slides[idx].classList.add('active');
+    dots[idx]?.classList.add('active');
+  }, 5000);
+}
+
 function renderFeed(){
   const feed = document.getElementById('feed');
   const note = document.getElementById('filterNote');
+  stopCarousel();
   let list = posts.slice();
 
   if(state.category !== 'all'){
@@ -1183,39 +1303,37 @@ function renderFeed(){
   }
 
   if(state.sort === 'trending'){
+    const trendList = posts.filter(p=>p.trending).sort((a,b)=> new Date(b.date)-new Date(a.date));
     list.sort((a,b)=> (b.trending - a.trending) || (new Date(b.date)-new Date(a.date)));
-  } else {
-    list.sort((a,b)=> new Date(b.date)-new Date(a.date));
+
+    let html = buildCarouselHtml(trendList);
+    if(list.length){
+      html += `<div class="section-label">Latest Stories</div>`;
+      html += list.map(p=>cardHtml(p)).join('');
+    } else if(!trendList.length){
+      html += `<div class="empty-state">No posts in this category yet. Use "+ New Post" to add the first one.</div>`;
+    }
+    feed.innerHTML = html;
+    attachCardHandlers(feed);
+    feed.querySelectorAll('.trending-slide').forEach(slide=>{
+      slide.addEventListener('click', (e)=>{
+        e.preventDefault();
+        openArticle(slide.dataset.id);
+      });
+    });
+    if(trendList.length) startCarousel(trendList.length);
+    return;
   }
+
+  list.sort((a,b)=> new Date(b.date)-new Date(a.date));
 
   if(list.length === 0){
     feed.innerHTML = `<div class="empty-state">No posts in this category yet. Use "+ New Post" to add the first one.</div>`;
     return;
   }
 
-  feed.innerHTML = list.map(p=>`
-    <a class="card" href="#" data-id="${p.id}">
-      <img class="card-img" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}" loading="lazy">
-      <div class="card-body">
-        <div class="card-meta">
-          <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
-          <span class="dot">&middot;</span>
-          <span>${fmtDate(p.date)}</span>
-          ${p.trending? '<span class="dot">&middot;</span><span class="trending-flag">TRENDING</span>' : ''}
-        </div>
-        <h3>${escapeHtml(p.title)}</h3>
-        <p class="snippet">${escapeHtml(p.snippet)}</p>
-        <span class="read-more">Read full article &rarr;</span>
-      </div>
-    </a>
-  `).join('');
-
-  feed.querySelectorAll('.card').forEach(card=>{
-    card.addEventListener('click', (e)=>{
-      e.preventDefault();
-      openArticle(card.dataset.id);
-    });
-  });
+  feed.innerHTML = list.map(p=>cardHtml(p)).join('');
+  attachCardHandlers(feed);
 }
 
 function openArticle(id){
