@@ -253,6 +253,7 @@
   .article-body{font-size:16px;line-height:1.75;color:var(--chalk);}
   .article-body p{margin:0 0 18px;}
   .article-body h2{font-family:var(--display);font-size:20px;margin:26px 0 12px;color:var(--floodlight);}
+  .article-body img{max-width:100%;height:auto;border-radius:var(--radius);margin:14px 0;display:block;}
 
   /* ============ WRITER / SEO PANEL ============ */
   .writer h2.display{font-size:24px;margin-bottom:4px;}
@@ -391,6 +392,7 @@
   .rich-editor h2{font-family:var(--display);font-size:19px;color:var(--floodlight);margin:14px 0 8px;}
   .rich-editor ul{margin:8px 0 8px 22px;}
   .rich-editor p{margin:0 0 10px;}
+  .rich-editor img{max-width:100%;height:auto;border-radius:var(--radius);margin:8px 0;display:block;}
 
   /* ============ DASHBOARD ============ */
   .dash-row{
@@ -605,7 +607,9 @@
         <button type="button" data-cmd="formatBlock" data-value="H2">Heading</button>
         <button type="button" data-cmd="formatBlock" data-value="P">Normal</button>
         <button type="button" data-cmd="insertUnorderedList">• List</button>
+        <button type="button" id="insertImageBtn">+ Image</button>
       </div>
+      <input type="file" id="bodyImageInput" accept="image/*" hidden>
       <div id="f_body_rich" class="rich-editor" contenteditable="true" data-placeholder="Write the full article here..."></div>
       <div class="char-count" id="bodyCount">0 words</div>
     </div>
@@ -944,12 +948,60 @@ document.getElementById('backFromDashboard').addEventListener('click', showFeed)
 /* =========================================================
    RICH TEXT TOOLBAR
    ========================================================= */
-document.querySelectorAll('.rich-toolbar button').forEach(btn=>{
+document.querySelectorAll('.rich-toolbar button[data-cmd]').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.getElementById('f_body_rich').focus();
     document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null);
     runSeoCheck();
   });
+});
+
+let savedBodyRange = null;
+document.getElementById('insertImageBtn').addEventListener('click', ()=>{
+  const sel = window.getSelection();
+  if(sel.rangeCount > 0){
+    const range = sel.getRangeAt(0);
+    const editor = document.getElementById('f_body_rich');
+    savedBodyRange = editor.contains(range.commonAncestorContainer) ? range.cloneRange() : null;
+  }
+  document.getElementById('bodyImageInput').click();
+});
+
+document.getElementById('bodyImageInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const maxW = 900;
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+
+      const editor = document.getElementById('f_body_rich');
+      editor.focus();
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      if(savedBodyRange){
+        sel.addRange(savedBodyRange);
+      } else {
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        sel.addRange(range);
+      }
+      document.execCommand('insertImage', false, dataUrl);
+      runSeoCheck();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
 });
 
 /* =========================================================
