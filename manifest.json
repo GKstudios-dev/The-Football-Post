@@ -1,6 +1,6 @@
 {
-  "name": "Footy Inform",
-  "short_name": "Footy Inform",
+  "name": "The football Post",
+  "short_name": "The Football Post",
   "description": "Club football news, national team news, and transfer gossip.",
   "start_url": "./",
   "scope": "./",
