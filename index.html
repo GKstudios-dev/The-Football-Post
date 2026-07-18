@@ -1277,7 +1277,13 @@ function setWriteControlsVisible(visible){
   openDashboardBtn.hidden = !visible;
 }
 function isAdmin(){
-  return !FIREBASE_READY || !!(FIREBASE_READY && firebase.auth().currentUser);
+  if(!FIREBASE_READY) return true;
+  try{
+    return !!(firebase.auth && firebase.auth().currentUser);
+  }catch(e){
+    console.warn('Could not check admin status (Firebase Auth not ready?):', e);
+    return false;
+  }
 }
 function setAdminOnlyUiVisible(visible){
   adminBtn.hidden = !visible;
@@ -1288,11 +1294,18 @@ function setAdminOnlyUiVisible(visible){
 if(FIREBASE_READY){
   setWriteControlsVisible(false);
   setAdminOnlyUiVisible(isAdminUrl());
-  firebase.auth().onAuthStateChanged(user=>{
-    setWriteControlsVisible(!!user);
-    setAdminOnlyUiVisible(!!user || isAdminUrl());
-    adminBtn.textContent = user ? 'Sign out' : 'Admin';
-  });
+  try{
+    firebase.auth().onAuthStateChanged(user=>{
+      setWriteControlsVisible(!!user);
+      setAdminOnlyUiVisible(!!user || isAdminUrl());
+      adminBtn.textContent = user ? 'Sign out' : 'Admin';
+    });
+  }catch(e){
+    // If Firebase Auth fails to start (blocked by a browser extension, network
+    // issue, etc.) admin sign-in just won't work — but this must not stop the
+    // rest of the page (in particular, loading articles further down) from running.
+    console.warn('Firebase Auth failed to start — admin login disabled, articles will still load:', e);
+  }
 } else {
   setWriteControlsVisible(true);
   setAdminOnlyUiVisible(false); // local-only mode: nothing to log into, badge/note not relevant to readers either
@@ -1945,10 +1958,14 @@ window.addEventListener('appinstalled', ()=>{ document.getElementById('installBt
 
 /* =========================================================
    INIT
+   Each call is isolated so a failure in one (e.g. the ticker or an
+   initial render glitch) can never prevent startPostsFeed() from
+   running — that's the call that actually fetches articles, so it
+   must always fire no matter what else goes wrong here.
    ========================================================= */
-buildTicker();
-renderFeed();
-runSeoCheck();
+try{ buildTicker(); }catch(e){ console.error('buildTicker failed:', e); }
+try{ renderFeed(); }catch(e){ console.error('renderFeed failed:', e); }
+try{ runSeoCheck(); }catch(e){ console.error('runSeoCheck failed:', e); }
 startPostsFeed();
 </script>
 </body>
