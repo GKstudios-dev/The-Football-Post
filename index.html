@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Football Post — Club, National Team &amp; Transfer News</title>
+<title>Footy Inform — Club, National Team &amp; Transfer News</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0E2A1B">
 <meta name="description" content="Footy Inform — fast, no-nonsense football coverage: club news, national team news, and transfer gossip.">
@@ -239,25 +239,6 @@
     font-family:var(--mono);font-size:12px;
   }
 
-  /* ============ SEARCH BAR ============ */
-  .search-bar-wrap{position:relative;margin-bottom:14px;}
-  .search-bar{
-    width:100%;height:42px;border-radius:21px;border:none;
-    background:var(--card-bg);color:var(--ink);
-    padding:0 16px 0 40px;font-family:var(--body);font-size:14px;
-  }
-  .search-bar::placeholder{color:var(--ink-dim);}
-  .search-ico{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;opacity:.55;}
-
-  /* ============ CATEGORY CHIP ROW ============ */
-  .chip-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:18px;}
-  .chip{
-    flex:none;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.4);
-    color:var(--chalk);font-family:var(--body);font-size:13px;font-weight:600;
-    padding:8px 14px;border-radius:18px;white-space:nowrap;
-  }
-  .chip:hover, .chip.active{background:var(--floodlight);color:var(--ink);border-color:var(--floodlight);}
-
   /* ============ HORIZONTAL CARD (mobile-app style) ============ */
   .card-h{
     display:flex;gap:12px;background:var(--card-bg);color:var(--ink);
@@ -266,7 +247,7 @@
     transition:transform .18s, box-shadow .18s;
   }
   .card-h:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(0,0,0,.3);}
-  .card-h-img{width:130px;height:100px;object-fit:contain;border-radius:6px;flex:none;background:var(--pitch-light);}
+  .card-h-img{width:92px;height:92px;object-fit:cover;border-radius:6px;flex:none;background:var(--pitch-light);}
   .card-h-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;}
   .card-h-meta{
     display:flex;align-items:center;gap:6px;margin-bottom:4px;
@@ -281,6 +262,11 @@
     margin:0;color:var(--ink-dim);font-size:13px;line-height:1.4;
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
   }
+  .read-badge{
+    font-family:var(--mono);font-size:9px;letter-spacing:.04em;color:#1F4F32;
+    margin-top:4px;display:inline-flex;align-items:center;gap:4px;
+  }
+  .read-badge::before{content:'●';font-size:7px;color:var(--bad);}
 
   /* ============ TRENDING CAROUSEL ============ */
   .section-label{
@@ -290,7 +276,7 @@
   .trending-carousel{position:relative;margin-bottom:6px;}
   .trending-track{position:relative;height:280px;border-radius:12px;overflow:hidden;}
   .trending-slide{
-    position:absolute;inset:0;background-size:contain;background-position:center;background-repeat:no-repeat;
+    position:absolute;inset:0;background-size:cover;background-position:center;
     border-radius:12px;opacity:0;transition:opacity .6s ease;pointer-events:none;
     display:block;
   }
@@ -334,6 +320,11 @@
     margin-bottom:18px;
   }
   .byline b{color:var(--chalk);}
+  .read-status{
+    font-family:var(--mono);font-size:11px;color:var(--floodlight);
+    margin-bottom:18px;display:flex;align-items:center;gap:6px;
+  }
+  .read-status::before{content:'●';font-size:8px;color:var(--bad);}
 
   .like-row{margin:28px 0 8px;text-align:center;}
   .like-btn{
@@ -464,12 +455,6 @@
     .article-hero{height:180px;}
     .field-row{flex-direction:column;gap:0;}
     .sidebar{width:82%;max-width:280px;}
-    .score-card{width:130px;padding:10px 10px 8px;}
-    .score-row{font-size:11.5px;}
-    .match-row{font-size:12px;padding:9px 10px;gap:6px;}
-    .m-status{min-width:34px;}
-    .standings-table{font-size:11.5px;}
-    .standings-table th,.standings-table td{padding:6px 5px;}
   }
   @media(min-width:481px) and (max-width:767px){
     .card-img{height:170px;}
@@ -557,21 +542,9 @@
 
   <!-- FEED VIEW -->
   <section id="feedView">
-    <div class="search-bar-wrap">
-      <input type="text" id="siteSearch" class="search-bar" placeholder="Search articles, teams, players...">
-      <span class="search-ico">&#128269;</span>
-    </div>
-    <div id="searchResults" hidden></div>
-
-    <div class="chip-row" id="chipRow">
-      <button class="chip" data-cat="club">Club Football</button>
-      <button class="chip" data-cat="national">National Teams</button>
-      <button class="chip" data-cat="transfers">Transfers</button>
-    </div>
-
     <div class="view-tabs">
-      <button class="view-tab active" id="tabTrending">Home</button>
-      <button class="view-tab" id="tabLatest">Trending</button>
+      <button class="view-tab active" id="tabTrending">Trending</button>
+      <button class="view-tab" id="tabLatest">Latest</button>
     </div>
 
     <!-- Posts feed (Trending / Latest) -->
@@ -727,7 +700,7 @@ if(FIREBASE_READY){
 </script>
 <script>
 const CONFIG = {
-  siteName: "Footy Inform",   // <-- change the whole site's name here, nowhere else needed
+  siteName: "The Football Post",   // <-- change the whole site's name here, nowhere else needed
   copyrightYear: 2026,        // change this each year, or leave autoYear on below
   autoYear: true              // if true, footer year updates itself automatically
 };
@@ -861,6 +834,10 @@ function startPostsFeed(){
       posts = snapshot.empty ? [] : snapshot.docs.map(d=>({ id:d.id, ...d.data() }));
       buildTicker();
       renderFeed();
+      // if the article view is currently open, refresh its read-status line too
+      if(!document.getElementById('articleView').hidden && currentOpenArticleId){
+        refreshReadStatusUI(currentOpenArticleId);
+      }
     },
     err=>{
       console.warn('Could not reach the shared database, using this browser\'s local posts instead:', err);
@@ -948,67 +925,16 @@ document.querySelectorAll('.nav-item[data-cat]').forEach(el=>{
 });
 document.querySelector('.nav-item[data-cat="all"]').classList.add('active');
 
-/* view tabs: Home / Trending */
+/* view tabs: Trending / Latest */
 const tabTrending = document.getElementById('tabTrending');
 const tabLatest = document.getElementById('tabLatest');
-const postsPane = document.getElementById('postsPane');
 
 function activateTab(btn){
   [tabTrending,tabLatest].forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
 }
-tabTrending.addEventListener('click', ()=>{ state.sort='trending'; activateTab(tabTrending); postsPane.hidden=false; renderFeed(); });
-tabLatest.addEventListener('click', ()=>{ state.sort='latest'; activateTab(tabLatest); postsPane.hidden=false; renderFeed(); });
-
-/* =========================================================
-   CATEGORY QUICK CHIPS — same filter used by the sidebar links,
-   just a faster path from the top of the page.
-   ========================================================= */
-document.querySelectorAll('.chip[data-cat]').forEach(chip=>{
-  chip.addEventListener('click', ()=>{
-    document.querySelectorAll('.chip[data-cat]').forEach(c=>c.classList.remove('active'));
-    chip.classList.add('active');
-    state.category = chip.dataset.cat;
-    document.querySelectorAll('.nav-item[data-cat]').forEach(n=>n.classList.remove('active'));
-    const matchingNavItem = document.querySelector(`.nav-item[data-cat="${chip.dataset.cat}"]`);
-    if(matchingNavItem) matchingNavItem.classList.add('active');
-    renderFeed();
-  });
-});
-
-/* =========================================================
-   SEARCH — simple client-side filter across title, snippet,
-   and category, since all posts are already loaded in memory.
-   ========================================================= */
-const siteSearchInput = document.getElementById('siteSearch');
-const searchResultsBox = document.getElementById('searchResults');
-
-siteSearchInput.addEventListener('input', ()=>{
-  const q = siteSearchInput.value.trim().toLowerCase();
-  if(q.length < 2){
-    searchResultsBox.hidden = true;
-    postsPane.hidden = false;
-    document.getElementById('chipRow').hidden = false;
-    document.querySelector('.view-tabs').hidden = false;
-    return;
-  }
-
-  document.getElementById('chipRow').hidden = true;
-  document.querySelector('.view-tabs').hidden = true;
-  postsPane.hidden = true;
-  searchResultsBox.hidden = false;
-
-  const matches = posts.filter(p=>
-    (p.title||'').toLowerCase().includes(q) ||
-    (p.snippet||'').toLowerCase().includes(q) ||
-    (CATEGORY_LABELS[p.category]||'').toLowerCase().includes(q)
-  );
-
-  searchResultsBox.innerHTML = matches.length
-    ? `<div class="section-label">${matches.length} result${matches.length===1?'':'s'}</div>` + matches.map(p=>cardHtml(p)).join('')
-    : `<div class="empty-state">No articles match "${escapeHtml(siteSearchInput.value.trim())}".</div>`;
-  attachCardHandlers(searchResultsBox);
-});
+tabTrending.addEventListener('click', ()=>{ state.sort='trending'; activateTab(tabTrending); renderFeed(); });
+tabLatest.addEventListener('click', ()=>{ state.sort='latest'; activateTab(tabLatest); renderFeed(); });
 
 /* =========================================================
    VIEW SWITCHING
@@ -1254,7 +1180,8 @@ function fmtDate(iso){
   return d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
 }
 
-function formatTimeAgo(d){
+function timeAgo(iso){
+  const d = iso.includes('T') ? new Date(iso) : new Date(iso+'T00:00:00');
   const seconds = Math.floor((Date.now() - d.getTime()) / 1000);
   if(seconds < 60) return 'Just now';
   const minutes = Math.floor(seconds / 60);
@@ -1271,48 +1198,13 @@ function formatTimeAgo(d){
   return `${years} year${years===1?'':'s'} ago`;
 }
 
-function timeAgo(iso){
-  const d = iso.includes('T') ? new Date(iso) : new Date(iso+'T00:00:00');
-  return formatTimeAgo(d);
-}
-
-// Turns a Firestore Timestamp, a Date, or an ISO string into a real JS Date.
-function resolveDate(value){
-  if(!value) return null;
-  if(typeof value.toDate === 'function') return value.toDate(); // Firestore Timestamp
-  if(value instanceof Date) return value;
-  if(typeof value === 'string') return value.includes('T') ? new Date(value) : new Date(value+'T00:00:00');
-  return null;
-}
-
-/* =========================================================
-   SHARED "READ X AGO" — reflects the last time ANYONE opened this
-   article (stored in lastReadAt), not when it was published. Falls
-   back to the publish date until the first real read happens.
-   ========================================================= */
-function readTimeAgoLabel(p){
-  const readDate = resolveDate(p.lastReadAt) || resolveDate(p.date);
-  if(!readDate) return '';
-  return 'Read ' + formatTimeAgo(readDate);
-}
-
-function markPostAsRead(p){
-  if(FIREBASE_READY){
-    db.collection('posts').doc(p.id).update({
-      lastReadAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).catch(err=> console.warn('Could not update read time:', err));
-  }
-  // Optimistic local update so this device's own view feels instant,
-  // even before Firestore's live snapshot confirms the server time.
-  p.lastReadAt = new Date();
-}
-
 let carouselTimer = null;
 function stopCarousel(){
   if(carouselTimer){ clearInterval(carouselTimer); carouselTimer = null; }
 }
 
 function cardHtml(p){
+  const readBadge = p.lastReadAt ? `<div class="read-badge">Read ${timeAgo(p.lastReadAt)}</div>` : '';
   return `
     <a class="card-h" href="#" data-id="${p.id}">
       <img class="card-h-img" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}" loading="lazy">
@@ -1320,10 +1212,11 @@ function cardHtml(p){
         <div class="card-h-meta">
           <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
           <span class="dot">&middot;</span>
-          <span>${readTimeAgoLabel(p)}</span>
+          <span>${fmtDate(p.date)}</span>
         </div>
         <h3>${escapeHtml(p.title)}</h3>
         <p class="snippet-h">${escapeHtml(p.snippet)}</p>
+        ${readBadge}
       </div>
     </a>`;
 }
@@ -1371,20 +1264,6 @@ function startCarousel(count){
   }, 5000);
 }
 
-function isStillLoading(){
-  return FIREBASE_READY && !firebaseHasLoaded;
-}
-
-function emptyStateHtml(readerMessage){
-  if(isStillLoading()){
-    return `<div class="empty-state">Loading articles…</div>`;
-  }
-  if(isAdmin()){
-    return `<div class="empty-state">No posts in this category yet. Use "+ New Post" to add the first one.</div>`;
-  }
-  return `<div class="empty-state">${readerMessage || 'No articles yet. Check back soon!'}</div>`;
-}
-
 function renderFeed(){
   const feed = document.getElementById('feed');
   const note = document.getElementById('filterNote');
@@ -1414,7 +1293,7 @@ function renderFeed(){
       html += `<div class="section-label">Latest Stories</div>`;
       html += list.map(p=>cardHtml(p)).join('');
     } else if(!trendList.length){
-      html += emptyStateHtml();
+      html += `<div class="empty-state">No posts in this category yet. Use "+ New Post" to add the first one.</div>`;
     }
     feed.innerHTML = html;
     attachCardHandlers(feed);
@@ -1428,20 +1307,50 @@ function renderFeed(){
     return;
   }
 
-  if(state.sort === 'latest'){
-    list = list.filter(p=>p.trending);
-  }
   list.sort((a,b)=> new Date(b.date)-new Date(a.date));
 
   if(list.length === 0){
-    feed.innerHTML = state.sort === 'latest'
-      ? emptyStateHtml('No trending stories right now.')
-      : emptyStateHtml();
+    feed.innerHTML = `<div class="empty-state">No posts in this category yet. Use "+ New Post" to add the first one.</div>`;
     return;
   }
 
   feed.innerHTML = list.map(p=>cardHtml(p)).join('');
   attachCardHandlers(feed);
+}
+
+/* =========================================================
+   READ TRACKING — every time an article is opened, we stamp
+   "lastReadAt" with the current time and save it to Firestore
+   (or local storage if Firebase isn't configured). That
+   timestamp is what powers the "Read 3 minutes ago" / "Read
+   just now" line on both the homepage card and the article
+   itself, using the same relative-time logic as the post date.
+   A live timer keeps the on-screen text ticking upward while
+   the article stays open, without needing a page refresh.
+   ========================================================= */
+let currentOpenArticleId = null;
+let readStatusTimer = null;
+
+function recordRead(post){
+  const now = new Date().toISOString();
+  post.lastReadAt = now; // reflect immediately in local state
+  if(FIREBASE_READY){
+    db.collection('posts').doc(post.id).update({ lastReadAt: now })
+      .catch(err=> console.warn('Could not save read time:', err));
+  } else {
+    saveLocalPosts();
+  }
+}
+
+function refreshReadStatusUI(id){
+  const p = posts.find(x=>x.id===id);
+  if(!p) return;
+  const statusEl = document.getElementById('readStatus');
+  if(statusEl) statusEl.textContent = p.lastReadAt ? `Read ${timeAgo(p.lastReadAt)}` : 'Read just now';
+}
+
+function stopReadStatusTimer(){
+  if(readStatusTimer){ clearInterval(readStatusTimer); readStatusTimer = null; }
 }
 
 function openArticle(id){
@@ -1451,6 +1360,10 @@ function openArticle(id){
   const likedIds = getLikedPostIds();
   const isLiked = likedIds.includes(id);
   const likeCount = p.likes || 0;
+
+  currentOpenArticleId = id;
+  recordRead(p);
+
   document.getElementById('articleContent').innerHTML = `
     <img class="article-hero" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}">
     <div class="article-meta">
@@ -1458,7 +1371,8 @@ function openArticle(id){
       <span>${fmtDate(p.date)}</span>
     </div>
     <h1>${escapeHtml(p.title)}</h1>
-    <div class="byline">By <b>${escapeHtml(p.author || 'Footy Post Staff')}</b> &middot; <span id="readTimeLabel">${readTimeAgoLabel(p)}</span></div>
+    <div class="byline">By <b>${escapeHtml(p.author || 'Footy Post Staff')}</b> &middot; ${timeAgo(p.date)}</div>
+    <div class="read-status" id="readStatus">Read just now</div>
     <div class="article-body">${bodyHtml}</div>
     <div class="like-row">
       <button class="like-btn ${isLiked ? 'liked' : ''}" id="likeBtn" data-id="${id}">
@@ -1477,9 +1391,18 @@ function openArticle(id){
   if(delBtn) delBtn.addEventListener('click', ()=> deletePost(p.id));
   const likeBtn = document.getElementById('likeBtn');
   if(likeBtn) likeBtn.addEventListener('click', ()=> toggleLike(p));
-  markPostAsRead(p);
+
+  stopReadStatusTimer();
+  readStatusTimer = setInterval(()=> refreshReadStatusUI(id), 15000);
+
+  // reflect the fresh "Read just now" on the homepage card too, next
+  // time the feed is drawn (e.g. when the user hits Back)
+  renderFeed();
+
   showArticle();
 }
+
+document.getElementById('backToFeed').addEventListener('click', stopReadStatusTimer);
 
 /* =========================================================
    LIKES — one like per browser (tracked in localStorage), stored
@@ -1694,7 +1617,7 @@ document.getElementById('publishBtn').addEventListener('click', ()=>{
 function renderDashboard(){
   const box = document.getElementById('dashboardList');
   if(!posts.length){
-    box.innerHTML = `<div class="scoreboard-empty">No posts yet — use "+ New Post" to write your first one.</div>`;
+    box.innerHTML = `<div class="empty-state">No posts yet — use "+ New Post" to write your first one.</div>`;
     return;
   }
   const sorted = posts.slice().sort((a,b)=> new Date(b.date) - new Date(a.date));
