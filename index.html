@@ -184,6 +184,41 @@
   }
   .sidebar-write:hover{background:var(--floodlight);color:var(--ink);}
 
+  /* ============ SEARCH BAR (matches app's search field on the home tab) ============ */
+  .search-bar{
+    display:flex;align-items:center;gap:8px;
+    background:var(--card-bg);color:var(--ink-dim);
+    border-radius:21px;
+    padding:0 14px;height:42px;
+    margin-bottom:16px;
+    cursor:pointer;
+    border:1px solid rgba(0,0,0,.06);
+  }
+  .search-bar svg{width:18px;height:18px;flex:none;opacity:.6;}
+  .search-bar span{font-family:var(--body);font-size:14px;color:var(--ink-dim);}
+
+  /* ============ CATEGORY CHIPS (matches app's chip row under the tabs) ============ */
+  .chip-row{
+    display:flex;gap:8px;overflow-x:auto;
+    margin:2px 0 22px;padding-bottom:2px;
+    scrollbar-width:none;
+  }
+  .chip-row::-webkit-scrollbar{display:none;}
+  .chip{
+    flex:none;
+    padding:8px 14px;border-radius:18px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--chalk);
+    font-family:var(--body);font-size:13px;font-weight:600;
+    white-space:nowrap;
+    transition:border-color .2s, background .2s, color .2s;
+  }
+  .chip:hover{border-color:var(--floodlight);}
+  .chip.active{
+    background:var(--floodlight);border-color:var(--floodlight);color:var(--ink);
+  }
+
   /* ============ MAIN ============ */
   main{max-width:760px;margin:0 auto;padding:26px 18px 60px;}
 
@@ -264,9 +299,30 @@
   }
   .read-badge{
     font-family:var(--mono);font-size:9px;letter-spacing:.04em;color:#1F4F32;
-    margin-top:4px;display:inline-flex;align-items:center;gap:4px;
+    display:inline-flex;align-items:center;gap:4px;
   }
   .read-badge::before{content:'●';font-size:7px;color:var(--bad);}
+
+  /* Bottom row of a card: read-time on the left, like button pinned to the
+     bottom-right corner — mirrors the app's category-label / like-button row */
+  .card-h-foot{
+    display:flex;align-items:center;justify-content:space-between;
+    margin-top:6px;min-height:20px;
+  }
+  .card-h-like{
+    display:inline-flex;align-items:center;gap:4px;
+    background:rgba(31,79,50,0.08);border:1px solid rgba(31,79,50,0.25);
+    color:#1F4F32;border-radius:14px;
+    padding:3px 9px;
+    font-family:var(--body);font-size:11px;font-weight:600;
+    transition:background .15s,border-color .15s,color .15s,transform .1s;
+    flex:none;margin-left:auto;
+  }
+  .card-h-like:active{transform:scale(0.94);}
+  .card-h-like .heart{font-size:13px;line-height:1;}
+  .card-h-like.liked{
+    background:rgba(255,182,39,0.16);border-color:var(--floodlight-dim);color:#8A6420;
+  }
 
   /* ============ TRENDING CAROUSEL ============ */
   .section-label{
@@ -542,9 +598,23 @@
 
   <!-- FEED VIEW -->
   <section id="feedView">
+    <!-- Search bar — visual match for the app's search field above the tabs -->
+    <div class="search-bar" id="searchBarStub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+      <span>Search articles, teams, players...</span>
+    </div>
+
     <div class="view-tabs">
       <button class="view-tab active" id="tabTrending">Trending</button>
       <button class="view-tab" id="tabLatest">Latest</button>
+    </div>
+
+    <!-- Category chips — same destinations as the sidebar links, just a faster path -->
+    <div class="chip-row" id="chipRow">
+      <button class="chip active" data-cat="all">All Stories</button>
+      <button class="chip" data-cat="club">Club Football</button>
+      <button class="chip" data-cat="national">National Teams</button>
+      <button class="chip" data-cat="transfers">Transfers</button>
     </div>
 
     <!-- Posts feed (Trending / Latest) -->
@@ -912,18 +982,33 @@ hamburger.addEventListener('click', ()=> sidebar.classList.contains('open') ? cl
 overlay.addEventListener('click', closeSidebar);
 document.getElementById('sidebarClose').addEventListener('click', closeSidebar);
 
+function setCategory(cat){
+  state.category = cat;
+  document.querySelectorAll('.nav-item[data-cat]').forEach(n=>n.classList.toggle('active', n.dataset.cat===cat));
+  document.querySelectorAll('.chip[data-cat]').forEach(n=>n.classList.toggle('active', n.dataset.cat===cat));
+  showFeed();
+  renderFeed();
+}
+
 document.querySelectorAll('.nav-item[data-cat]').forEach(el=>{
   el.addEventListener('click', (e)=>{
     e.preventDefault();
-    state.category = el.dataset.cat;
-    document.querySelectorAll('.nav-item[data-cat]').forEach(n=>n.classList.remove('active'));
-    el.classList.add('active');
     closeSidebar();
-    showFeed();
-    renderFeed();
+    setCategory(el.dataset.cat);
   });
 });
 document.querySelector('.nav-item[data-cat="all"]').classList.add('active');
+
+// Category chips — same destinations as the sidebar links, just a faster path
+document.querySelectorAll('.chip[data-cat]').forEach(el=>{
+  el.addEventListener('click', ()=> setCategory(el.dataset.cat));
+});
+
+// Search bar stub — matches the app's search entry point visually;
+// hook this up to real search whenever there's a query to run it against.
+document.getElementById('searchBarStub').addEventListener('click', ()=>{
+  document.getElementById('hamburger').focus();
+});
 
 /* view tabs: Trending / Latest */
 const tabTrending = document.getElementById('tabTrending');
@@ -1204,7 +1289,9 @@ function stopCarousel(){
 }
 
 function cardHtml(p){
-  const readBadge = p.lastReadAt ? `<div class="read-badge">Read ${timeAgo(p.lastReadAt)}</div>` : '';
+  const readBadge = p.lastReadAt ? `<div class="read-badge">Read ${timeAgo(p.lastReadAt)}</div>` : '<span></span>';
+  const isLiked = getLikedPostIds().includes(p.id);
+  const likeCount = p.likes || 0;
   return `
     <a class="card-h" href="#" data-id="${p.id}">
       <img class="card-h-img" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}" loading="lazy">
@@ -1216,7 +1303,12 @@ function cardHtml(p){
         </div>
         <h3>${escapeHtml(p.title)}</h3>
         <p class="snippet-h">${escapeHtml(p.snippet)}</p>
-        ${readBadge}
+        <div class="card-h-foot">
+          ${readBadge}
+          <button type="button" class="card-h-like ${isLiked?'liked':''}" data-id="${p.id}" aria-label="${isLiked?'Unlike':'Like'} this post" onclick="handleCardLike(event,'${p.id}')">
+            <span class="heart">${isLiked?'♥':'♡'}</span><span class="like-num">${likeCount}</span>
+          </button>
+        </div>
       </div>
     </a>`;
 }
@@ -1224,6 +1316,7 @@ function cardHtml(p){
 function attachCardHandlers(container){
   container.querySelectorAll('.card-h').forEach(card=>{
     card.addEventListener('click', (e)=>{
+      if(e.target.closest('.card-h-like')) return; // like button handles its own click
       e.preventDefault();
       openArticle(card.dataset.id);
     });
@@ -1275,10 +1368,7 @@ function renderFeed(){
     note.hidden = false;
     note.innerHTML = `Showing <b style="color:var(--chalk)">${CATEGORY_LABELS[state.category]}</b> only &middot; <button id="clearFilter">show all</button>`;
     document.getElementById('clearFilter').addEventListener('click', ()=>{
-      state.category='all';
-      document.querySelectorAll('.nav-item[data-cat]').forEach(n=>n.classList.remove('active'));
-      document.querySelector('.nav-item[data-cat="all"]').classList.add('active');
-      renderFeed();
+      setCategory('all');
     });
   } else {
     note.hidden = true;
@@ -1327,6 +1417,8 @@ function renderFeed(){
    itself, using the same relative-time logic as the post date.
    A live timer keeps the on-screen text ticking upward while
    the article stays open, without needing a page refresh.
+   This is unchanged — still wired straight to Firestore exactly
+   as before.
    ========================================================= */
 let currentOpenArticleId = null;
 let readStatusTimer = null;
@@ -1406,7 +1498,13 @@ document.getElementById('backToFeed').addEventListener('click', stopReadStatusTi
 
 /* =========================================================
    LIKES — one like per browser (tracked in localStorage), stored
-   as a plain number on the post document.
+   as a plain number on the post document. Used by:
+   - the article-view like button (unchanged, id="likeBtn")
+   - the new homepage card like button (bottom-right corner of
+     each "Latest Stories" card, matching the app's layout)
+   Both read/write the same liked-ids list and the same post.likes
+   field, so a like made on the card is reflected in the article
+   view and vice versa.
    ========================================================= */
 const LIKED_POSTS_KEY = 'footy-inform-liked-posts';
 function getLikedPostIds(){
@@ -1419,24 +1517,16 @@ function saveLikedPostIds(ids){
   try{ localStorage.setItem(LIKED_POSTS_KEY, JSON.stringify(ids)); }catch(e){}
 }
 
-function toggleLike(post){
-  const likedIds = getLikedPostIds();
-  const alreadyLiked = likedIds.includes(post.id);
+function applyLikeDelta(post, alreadyLiked){
   const delta = alreadyLiked ? -1 : 1;
   const newCount = Math.max(0, (post.likes || 0) + delta);
-
   post.likes = newCount;
+
+  const likedIds = getLikedPostIds();
   if(alreadyLiked){
     saveLikedPostIds(likedIds.filter(x=>x!==post.id));
   } else {
     saveLikedPostIds([...likedIds, post.id]);
-  }
-
-  const btn = document.getElementById('likeBtn');
-  if(btn){
-    btn.classList.toggle('liked', !alreadyLiked);
-    btn.querySelector('.heart').textContent = alreadyLiked ? '♡' : '♥';
-    btn.querySelector('#likeCount').textContent = newCount;
   }
 
   if(FIREBASE_READY){
@@ -1445,6 +1535,51 @@ function toggleLike(post){
     }).catch(err=> console.warn('Could not update like count:', err));
   } else {
     saveLocalPosts();
+  }
+  return newCount;
+}
+
+function toggleLike(post){
+  const alreadyLiked = getLikedPostIds().includes(post.id);
+  const newCount = applyLikeDelta(post, alreadyLiked);
+
+  const btn = document.getElementById('likeBtn');
+  if(btn){
+    btn.classList.toggle('liked', !alreadyLiked);
+    btn.querySelector('.heart').textContent = alreadyLiked ? '♡' : '♥';
+    btn.querySelector('#likeCount').textContent = newCount;
+  }
+
+  // keep the matching card button (if currently rendered) in sync too
+  const cardBtn = document.querySelector(`.card-h-like[data-id="${post.id}"]`);
+  if(cardBtn){
+    cardBtn.classList.toggle('liked', !alreadyLiked);
+    cardBtn.querySelector('.heart').textContent = alreadyLiked ? '♡' : '♥';
+    cardBtn.querySelector('.like-num').textContent = newCount;
+  }
+}
+
+// Handles the heart/like button in the bottom-right corner of each
+// homepage card. Stops the click from also opening the article.
+function handleCardLike(e, postId){
+  e.preventDefault();
+  e.stopPropagation();
+  const post = posts.find(p=>p.id===postId);
+  if(!post) return;
+  const alreadyLiked = getLikedPostIds().includes(postId);
+  const newCount = applyLikeDelta(post, alreadyLiked);
+
+  const btn = e.currentTarget;
+  btn.classList.toggle('liked', !alreadyLiked);
+  btn.querySelector('.heart').textContent = alreadyLiked ? '♡' : '♥';
+  btn.querySelector('.like-num').textContent = newCount;
+
+  // keep the article-view like button (if currently open for this post) in sync
+  const articleLikeBtn = document.getElementById('likeBtn');
+  if(articleLikeBtn && articleLikeBtn.dataset.id === postId){
+    articleLikeBtn.classList.toggle('liked', !alreadyLiked);
+    articleLikeBtn.querySelector('.heart').textContent = alreadyLiked ? '♡' : '♥';
+    articleLikeBtn.querySelector('#likeCount').textContent = newCount;
   }
 }
 
