@@ -375,6 +375,43 @@
   .article-body p{margin:0 0 18px;}
   .article-body h2{font-family:var(--display);font-size:20px;margin:26px 0 12px;color:var(--floodlight);}
   .article-body img{max-width:100%;height:auto;border-radius:var(--radius);margin:14px 0;display:block;}
+  .article-body a.inline-post-link{color:var(--floodlight);text-decoration:underline;text-decoration-color:var(--floodlight-dim);text-underline-offset:2px;}
+  .article-body a.inline-post-link:hover{text-decoration-color:var(--floodlight);}
+
+  .article-subtitle{
+    font-family:var(--body);font-size:17px;line-height:1.5;color:var(--chalk-dim);
+    margin:0 0 18px;font-weight:500;
+  }
+  .img-caption{
+    font-family:var(--mono);font-size:11px;color:var(--chalk-dim);
+    margin:-10px 0 18px;line-height:1.5;
+  }
+
+  /* ============ RELATED ARTICLES ============ */
+  .related-section{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);}
+  .related-grid{display:grid;grid-template-columns:1fr;gap:14px;}
+  @media(min-width:640px){.related-grid{grid-template-columns:1fr 1fr;}}
+  @media(min-width:900px){.related-grid{grid-template-columns:1fr 1fr 1fr;}}
+
+  /* ============ INLINE ARTICLE-LINK PICKER (writer tool) ============ */
+  .link-picker{
+    position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+    z-index:70;
+    background:var(--pitch);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;width:min(360px,90vw);max-height:70vh;
+    box-shadow:0 14px 34px rgba(0,0,0,.45);
+    display:flex;flex-direction:column;
+  }
+  .link-picker input[type="text"]{margin-bottom:10px;}
+  .link-picker-list{overflow-y:auto;flex:1;}
+  .link-picker-item{
+    display:block;width:100%;text-align:left;
+    background:var(--pitch-dark);border:1px solid var(--line);color:var(--chalk);
+    padding:9px 11px;border-radius:var(--radius);font-family:var(--body);font-size:13px;
+    margin-bottom:6px;
+  }
+  .link-picker-item:hover{border-color:var(--floodlight);}
+  .link-picker-item small{display:block;color:var(--chalk-dim);font-family:var(--mono);font-size:10px;margin-top:2px;}
 
   .byline{
     font-family:var(--mono);font-size:11.5px;color:var(--chalk-dim);
@@ -599,6 +636,15 @@
   <button class="cancel-btn" id="adminCancel" style="width:100%;margin-left:0;margin-top:8px;">Cancel</button>
 </div>
 
+<!-- "READ ALSO" ARTICLE-LINK PICKER (writer tool) -->
+<div id="overlay2" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:65;display:none;"></div>
+<div class="link-picker" id="linkPicker" hidden>
+  <label for="linkPickerSearch" style="font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--chalk-dim);text-transform:uppercase;margin-bottom:6px;display:block;">Link to which article?</label>
+  <input type="text" id="linkPickerSearch" placeholder="Search articles...">
+  <div class="link-picker-list" id="linkPickerList"></div>
+  <button class="cancel-btn" id="linkPickerCancel" style="width:100%;margin-left:0;margin-top:10px;">Cancel</button>
+</div>
+
 <main id="main">
 
   <!-- FEED VIEW -->
@@ -713,6 +759,7 @@
         <button type="button" data-cmd="formatBlock" data-value="P">Normal</button>
         <button type="button" data-cmd="insertUnorderedList">• List</button>
         <button type="button" id="insertImageBtn">+ Image</button>
+        <button type="button" id="insertPostLinkBtn">🔗 Link to Article</button>
       </div>
       <input type="file" id="bodyImageInput" accept="image/*" hidden>
       <div id="f_body_rich" class="rich-editor" contenteditable="true" data-placeholder="Write the full article here..."></div>
@@ -1169,6 +1216,94 @@ document.getElementById('bodyImageInput').addEventListener('change', (e)=>{
 });
 
 /* =========================================================
+   "READ ALSO" INLINE ARTICLE LINKS
+   Lets the writer select text (or place the cursor) in the body
+   editor, pick another published post, and insert a normal-looking
+   link — styled in floodlight gold — that opens that post inside
+   the app-like single-page view when a reader clicks it (see the
+   delegated click handler near openArticle() below), instead of
+   navigating to a real URL.
+   ========================================================= */
+let savedLinkRange = null;
+
+function openPostLinkPicker(){
+  const sel = window.getSelection();
+  const editor = document.getElementById('f_body_rich');
+  if(sel.rangeCount > 0){
+    const range = sel.getRangeAt(0);
+    savedLinkRange = editor.contains(range.commonAncestorContainer) ? range.cloneRange() : null;
+  } else {
+    savedLinkRange = null;
+  }
+  document.getElementById('linkPickerSearch').value = '';
+  renderLinkPickerList('');
+  document.getElementById('overlay2').style.display = 'block';
+  document.getElementById('linkPicker').hidden = false;
+  document.getElementById('linkPickerSearch').focus();
+}
+
+function closePostLinkPicker(){
+  document.getElementById('overlay2').style.display = 'none';
+  document.getElementById('linkPicker').hidden = true;
+}
+
+function renderLinkPickerList(query){
+  const list = document.getElementById('linkPickerList');
+  const q = query.trim().toLowerCase();
+  // Don't offer linking an article to itself while editing it.
+  const candidates = posts
+    .filter(p => p.id !== editingPostId)
+    .filter(p => !q || p.title.toLowerCase().includes(q))
+    .slice(0, 30);
+  if(!candidates.length){
+    list.innerHTML = `<div style="font-family:var(--mono);font-size:11px;color:var(--chalk-dim);padding:8px 2px;">No matching articles.</div>`;
+    return;
+  }
+  list.innerHTML = candidates.map(p => `
+    <button type="button" class="link-picker-item" data-id="${p.id}">
+      ${escapeHtml(p.title)}
+      <small>${CATEGORY_LABELS[p.category] || p.category}</small>
+    </button>
+  `).join('');
+  list.querySelectorAll('.link-picker-item').forEach(btn=>{
+    btn.addEventListener('click', ()=> insertPostLink(btn.dataset.id));
+  });
+}
+
+function insertPostLink(postId){
+  const post = posts.find(p=>p.id===postId);
+  if(!post) return;
+
+  const editor = document.getElementById('f_body_rich');
+  editor.focus();
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  if(savedLinkRange){
+    sel.addRange(savedLinkRange);
+  } else {
+    const range = document.createRange();
+    range.selectNodeContents(editor);
+    range.collapse(false);
+    sel.addRange(range);
+  }
+
+  // If the writer had text selected, keep using it as the link's visible
+  // words (the "buried link" look); otherwise fall back to the target
+  // article's own title so the inserted link never reads as empty.
+  const selectedText = sel.toString().trim();
+  const linkText = selectedText || post.title;
+  const anchorHtml = `<a href="#" class="inline-post-link" data-post-id="${post.id}">${escapeHtml(linkText)}</a>`;
+  document.execCommand('insertHTML', false, anchorHtml);
+  runSeoCheck();
+  closePostLinkPicker();
+}
+
+document.getElementById('insertPostLinkBtn').addEventListener('click', openPostLinkPicker);
+document.getElementById('linkPickerCancel').addEventListener('click', closePostLinkPicker);
+document.getElementById('overlay2').addEventListener('click', closePostLinkPicker);
+document.getElementById('linkPickerSearch').addEventListener('input', (e)=> renderLinkPickerList(e.target.value));
+
+/* =========================================================
    IMAGE UPLOAD — resized/compressed to a data URL client-side
    (no file storage backend, so the image travels inside the
    post itself; kept under ~1200px wide to stay well within
@@ -1556,6 +1691,25 @@ function stopReadStatusTimer(){
   if(readStatusTimer){ clearInterval(readStatusTimer); readStatusTimer = null; }
 }
 
+/* Picks up to 3 "related" posts for the bottom-of-article widget:
+   same category first (most recent), topped up with other recent
+   posts if the category doesn't have enough on its own. */
+function relatedPostsFor(p){
+  const sameCategory = posts
+    .filter(x => x.id !== p.id && x.category === p.category)
+    .sort((a,b)=> toJSDate(b.date) - toJSDate(a.date));
+  const picked = sameCategory.slice(0, 3);
+  if(picked.length < 3){
+    const usedIds = new Set([p.id, ...picked.map(x=>x.id)]);
+    const filler = posts
+      .filter(x => !usedIds.has(x.id))
+      .sort((a,b)=> toJSDate(b.date) - toJSDate(a.date))
+      .slice(0, 3 - picked.length);
+    picked.push(...filler);
+  }
+  return picked;
+}
+
 function openArticle(id){
   const p = posts.find(x=>x.id===id);
   if(!p) return;
@@ -1563,18 +1717,20 @@ function openArticle(id){
   const likedIds = getLikedPostIds();
   const isLiked = likedIds.includes(id);
   const likeCount = p.likes || 0;
+  const related = relatedPostsFor(p);
 
   currentOpenArticleId = id;
   recordRead(p);
 
   document.getElementById('articleContent').innerHTML = `
-    <img class="article-hero" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}">
     <div class="article-meta">
       <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
-      <span>${fmtDate(p.date)}</span>
     </div>
     <h1>${escapeHtml(p.title)}</h1>
-    <div class="byline">By <b>${escapeHtml(p.author || 'Footy Post Staff')}</b> &middot; ${timeAgo(p.date)}</div>
+    ${p.snippet ? `<p class="article-subtitle">${escapeHtml(p.snippet)}</p>` : ''}
+    <img class="article-hero" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}">
+    ${p.imageAlt ? `<div class="img-caption">${escapeHtml(p.imageAlt)}</div>` : ''}
+    <div class="byline">By <b>${escapeHtml(p.author || 'Footy Post Staff')}</b> &middot; ${fmtDate(p.date)}</div>
     <div class="read-status" id="readStatus">Read just now</div>
     <div class="article-body">${bodyHtml}</div>
     <div class="like-row">
@@ -1583,6 +1739,14 @@ function openArticle(id){
         <span id="likeCount">${likeCount}</span> ${likeCount===1?'Like':'Likes'}
       </button>
     </div>
+    ${related.length ? `
+      <div class="related-section">
+        <div class="section-label">Read Also</div>
+        <div class="related-grid" id="relatedGrid">
+          ${related.map(cardHtml).join('')}
+        </div>
+      </div>
+    ` : ''}
     ${isAdmin() ? `
       <button class="publish-btn" id="editPostBtn" style="margin-top:24px;">Edit this post</button>
       <button class="cancel-btn" id="deletePostBtn" style="margin-top:24px;margin-left:10px;">Delete this post</button>
@@ -1594,6 +1758,8 @@ function openArticle(id){
   if(delBtn) delBtn.addEventListener('click', ()=> deletePost(p.id));
   const likeBtn = document.getElementById('likeBtn');
   if(likeBtn) likeBtn.addEventListener('click', ()=> toggleLike(p));
+  const relatedGrid = document.getElementById('relatedGrid');
+  if(relatedGrid) attachCardHandlers(relatedGrid);
 
   stopReadStatusTimer();
   readStatusTimer = setInterval(()=> refreshReadStatusUI(id), 15000);
@@ -1604,6 +1770,19 @@ function openArticle(id){
 
   showArticle();
 }
+
+// "Read Also" links buried inside the article body (inserted via the
+// writer's link picker) open that other post in-page instead of
+// navigating anywhere — delegated once here since #articleContent's
+// innerHTML gets replaced on every openArticle() call.
+document.getElementById('articleContent').addEventListener('click', (e)=>{
+  const link = e.target.closest('a.inline-post-link');
+  if(!link) return;
+  e.preventDefault();
+  const targetId = link.dataset.postId;
+  if(targetId) openArticle(targetId);
+});
+
 
 document.getElementById('backToFeed').addEventListener('click', stopReadStatusTimer);
 
