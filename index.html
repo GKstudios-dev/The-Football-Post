@@ -389,9 +389,17 @@
 
   /* ============ RELATED ARTICLES ============ */
   .related-section{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);}
-  .related-grid{display:grid;grid-template-columns:1fr;gap:14px;}
+  .related-grid{display:grid;grid-template-columns:1fr;gap:16px;}
   @media(min-width:640px){.related-grid{grid-template-columns:1fr 1fr;}}
   @media(min-width:900px){.related-grid{grid-template-columns:1fr 1fr 1fr;}}
+  .related-card{display:block;}
+  .related-card img{width:100%;height:140px;object-fit:cover;border-radius:var(--radius);margin-bottom:8px;display:block;background:var(--pitch-light);}
+  .related-card .tag{margin-bottom:6px;}
+  .related-card h4{
+    margin:0;font-size:14.5px;line-height:1.35;color:var(--chalk);
+    font-family:var(--body);font-weight:700;text-transform:none;letter-spacing:0;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  }
 
   /* ============ INLINE ARTICLE-LINK PICKER (writer tool) ============ */
   .link-picker{
@@ -721,6 +729,11 @@
       <label for="f_title">Title</label>
       <input id="f_title" type="text" placeholder="Headline for the post">
       <div class="char-count" id="titleCount">0 characters</div>
+    </div>
+
+    <div class="field">
+      <label for="f_subtitle">Subtitle (shown on the article page, right under the title)</label>
+      <input id="f_subtitle" type="text" placeholder="A short deck line — separate from the homepage snippet">
     </div>
 
     <div class="field">
@@ -1343,7 +1356,7 @@ function resetWriterForm(){
   editingPostId = null;
   document.getElementById('writerHeading').textContent = 'Write a new post';
   document.getElementById('publishBtn').textContent = 'Publish post';
-  ['f_title','f_meta','f_keyword','f_alt','f_snippet','f_tags'].forEach(id=> document.getElementById(id).value='');
+  ['f_title','f_subtitle','f_meta','f_keyword','f_alt','f_snippet','f_tags'].forEach(id=> document.getElementById(id).value='');
   document.getElementById('f_author').value = 'Footy Post Staff';
   document.getElementById('f_body_rich').innerHTML = '';
   document.getElementById('f_category').value = 'club';
@@ -1359,6 +1372,7 @@ function loadPostIntoWriter(post){
   document.getElementById('writerHeading').textContent = 'Edit post';
   document.getElementById('publishBtn').textContent = 'Save changes';
   document.getElementById('f_title').value = post.title || '';
+  document.getElementById('f_subtitle').value = post.subtitle || '';
   document.getElementById('f_meta').value = post.metaDescription || post.snippet || '';
   document.getElementById('f_keyword').value = post.focusKeyword || '';
   document.getElementById('f_author').value = post.author || 'Footy Post Staff';
@@ -1691,23 +1705,43 @@ function stopReadStatusTimer(){
   if(readStatusTimer){ clearInterval(readStatusTimer); readStatusTimer = null; }
 }
 
-/* Picks up to 3 "related" posts for the bottom-of-article widget:
+/* Picks "plenty" of related posts for the bottom-of-article widget —
    same category first (most recent), topped up with other recent
-   posts if the category doesn't have enough on its own. */
-function relatedPostsFor(p){
+   posts if the category doesn't have enough on its own. Shown as a
+   single stacked list (not a grid) so it reads the same on phone and
+   desktop, closer to how NYT/Yahoo-style "more stories" lists work. */
+function relatedPostsFor(p, limit = 8){
   const sameCategory = posts
     .filter(x => x.id !== p.id && x.category === p.category)
     .sort((a,b)=> toJSDate(b.date) - toJSDate(a.date));
-  const picked = sameCategory.slice(0, 3);
-  if(picked.length < 3){
+  const picked = sameCategory.slice(0, limit);
+  if(picked.length < limit){
     const usedIds = new Set([p.id, ...picked.map(x=>x.id)]);
     const filler = posts
       .filter(x => !usedIds.has(x.id))
       .sort((a,b)=> toJSDate(b.date) - toJSDate(a.date))
-      .slice(0, 3 - picked.length);
+      .slice(0, limit - picked.length);
     picked.push(...filler);
   }
   return picked;
+}
+
+function relatedCardHtml(p){
+  return `
+    <a class="related-card" href="#" data-id="${p.id}">
+      <img src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}" loading="lazy">
+      <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
+      <h4>${escapeHtml(p.title)}</h4>
+    </a>`;
+}
+
+function attachRelatedCardHandlers(container){
+  container.querySelectorAll('.related-card').forEach(card=>{
+    card.addEventListener('click', (e)=>{
+      e.preventDefault();
+      openArticle(card.dataset.id);
+    });
+  });
 }
 
 function openArticle(id){
@@ -1727,7 +1761,7 @@ function openArticle(id){
       <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
     </div>
     <h1>${escapeHtml(p.title)}</h1>
-    ${p.snippet ? `<p class="article-subtitle">${escapeHtml(p.snippet)}</p>` : ''}
+    ${p.subtitle ? `<p class="article-subtitle">${escapeHtml(p.subtitle)}</p>` : ''}
     <img class="article-hero" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}">
     ${p.imageAlt ? `<div class="img-caption">${escapeHtml(p.imageAlt)}</div>` : ''}
     <div class="byline">By <b>${escapeHtml(p.author || 'Footy Post Staff')}</b> &middot; ${fmtDate(p.date)}</div>
@@ -1739,17 +1773,17 @@ function openArticle(id){
         <span id="likeCount">${likeCount}</span> ${likeCount===1?'Like':'Likes'}
       </button>
     </div>
+    ${isAdmin() ? `
+      <button class="publish-btn" id="editPostBtn" style="margin-top:24px;">Edit this post</button>
+      <button class="cancel-btn" id="deletePostBtn" style="margin-top:24px;margin-left:10px;">Delete this post</button>
+    ` : ''}
     ${related.length ? `
       <div class="related-section">
         <div class="section-label">Read Also</div>
         <div class="related-grid" id="relatedGrid">
-          ${related.map(cardHtml).join('')}
+          ${related.map(relatedCardHtml).join('')}
         </div>
       </div>
-    ` : ''}
-    ${isAdmin() ? `
-      <button class="publish-btn" id="editPostBtn" style="margin-top:24px;">Edit this post</button>
-      <button class="cancel-btn" id="deletePostBtn" style="margin-top:24px;margin-left:10px;">Delete this post</button>
     ` : ''}
   `;
   const editBtn = document.getElementById('editPostBtn');
@@ -1759,7 +1793,7 @@ function openArticle(id){
   const likeBtn = document.getElementById('likeBtn');
   if(likeBtn) likeBtn.addEventListener('click', ()=> toggleLike(p));
   const relatedGrid = document.getElementById('relatedGrid');
-  if(relatedGrid) attachCardHandlers(relatedGrid);
+  if(relatedGrid) attachRelatedCardHandlers(relatedGrid);
 
   stopReadStatusTimer();
   readStatusTimer = setInterval(()=> refreshReadStatusUI(id), 15000);
@@ -2004,6 +2038,7 @@ function dotColor(level){ return level==='good' ? 'var(--good)' : level==='warn'
 
 document.getElementById('publishBtn').addEventListener('click', ()=>{
   const title = document.getElementById('f_title').value.trim();
+  const subtitle = document.getElementById('f_subtitle').value.trim();
   const meta = document.getElementById('f_meta').value.trim();
   const snippet = document.getElementById('f_snippet').value.trim() || meta;
   const bodyHtml = document.getElementById('f_body_rich').innerHTML.trim();
@@ -2022,7 +2057,7 @@ document.getElementById('publishBtn').addEventListener('click', ()=>{
 
   const postData = {
     category, trending, author,
-    title, snippet, image, imageAlt: alt, metaDescription: meta, focusKeyword, tags,
+    title, subtitle, snippet, image, imageAlt: alt, metaDescription: meta, focusKeyword, tags,
     body: bodyHtml
   };
 
