@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The football Post — Club, National Team &amp; Transfer News</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0E2A1B">
+<meta name="description" content="The Football Post-football coverage: club news, national team news, and transfer gossip.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div id="overlay"></div>
+
+<header class="topbar">
+  <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="brand">
+    <span class="mark" id="brandMark">Footy <em>Inform</em></span>
+    <span class="tagline">CLUB · NATIONAL TEAM · TRANSFERS</span>
+  </div>
+  <button class="write-btn" id="installBtn" hidden style="border-color:var(--floodlight-dim);">Install App</button>
+  <span id="modeBadge" hidden style="font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--chalk-dim);border:1px solid var(--line);padding:5px 8px;border-radius:2px;text-transform:uppercase;"></span>
+  <button class="write-btn" id="adminBtn">Admin</button>
+  <button class="write-btn" id="openWriter" hidden>+ New Post</button>
+  <button class="write-btn" id="openDashboard" hidden style="margin-left:6px;">Dashboard</button>
+</header>
+
+<div class="ticker">
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+<nav class="sidebar" id="sidebar" aria-label="Categories">
+  <div class="sidebar-head">
+    <span class="display">Menu</span>
+    <button class="sidebar-close" id="sidebarClose" aria-label="Close menu">&times;</button>
+  </div>
+
+  <!-- Reader account tile — mirrors the app drawer's "Sign In / To like
+       and comment on articles" tile, or "email + tap to sign out" once
+       signed in. Filled in by renderSidebarAccount() in js/auth.js. -->
+  <div id="sidebarAccount"></div>
+
+  <div class="nav-section-label">Categories</div>
+  <a href="#" class="nav-item" data-cat="all">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    All Stories
+  </a>
+  <a href="#" class="nav-item" data-cat="club">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
+    Club Football News
+  </a>
+  <a href="#" class="nav-item" data-cat="national">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 3v18M5 4h13l-2.5 3L18 10H5"/></svg>
+    National Team News
+  </a>
+  <a href="#" class="nav-item" data-cat="transfers">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 7h10M7 7l3-3M7 7l3 3M17 17H7M17 17l-3-3M17 17l-3 3"/></svg>
+    Transfers &amp; Gossip
+  </a>
+
+  <div class="nav-section-label">Coming soon</div>
+  <span class="nav-item disabled">Tactics Board</span>
+  <span class="nav-item disabled">Fan Culture</span>
+  <!-- To add more categories later: duplicate a nav-item above with a
+       new data-cat, then add matching posts with that category in the
+       SAMPLE_POSTS / posts data in js/state.js. -->
+
+  <!-- Footer-style links — same destinations as the app drawer
+       (About Us, Privacy Policy, Terms of Use, Contact Us, Support/FAQs). -->
+  <div class="nav-section-label">More</div>
+  <a href="#" class="nav-item" data-link="https://gkstudios-dev.github.io/The-Football-Post/Privacy_Policy.html">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6l7-3z"/></svg>
+    Privacy Policy
+  </a>
+  <a href="#" class="nav-item" data-link="https://gkstudios-dev.github.io/The-Football-Post/Terms_of_Use.html">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 3h8l4 4v14H7z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg>
+    Terms of Use
+  </a>
+  <a href="#" class="nav-item" data-link="https://gkstudios-dev.github.io/The-Football-Post/About_Us.html">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg>
+    About Us
+  </a>
+  <a href="#" class="nav-item" data-link="https://gkstudios-dev.github.io/The-Football-Post/contact_us.html">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+    Contact Us
+  </a>
+  <a href="#" class="nav-item" data-link="https://gkstudios-dev.github.io/The-Football-Post/support.html">
+    <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 1 1 4.4 2.6c-1 .5-1.5 1-1.5 2.1M12 17h.01"/></svg>
+    Support / FAQs
+  </a>
+
+  <button class="sidebar-write" id="sidebarWrite" hidden>+ Write a new post</button>
+</nav>
+
+<!-- ADMIN LOGIN PANEL -->
+<div class="admin-panel" id="adminPanel" hidden>
+  <div class="field">
+    <label for="admin_email">Email</label>
+    <input id="admin_email" type="email" autocomplete="username">
+  </div>
+  <div class="field">
+    <label for="admin_pass">Password</label>
+    <input id="admin_pass" type="password" autocomplete="current-password">
+  </div>
+  <div id="adminError" style="color:var(--bad);font-family:var(--mono);font-size:11px;margin-bottom:10px;"></div>
+  <button class="publish-btn" id="adminSubmit" style="width:100%;">Sign in</button>
+  <button class="cancel-btn" id="adminCancel" style="width:100%;margin-left:0;margin-top:8px;">Cancel</button>
+</div>
+
+<!-- READER SIGN-IN / SIGN-UP MODAL — required to like or comment -->
+<div id="authOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:65;display:none;"></div>
+<div class="auth-modal" id="authModal" hidden>
+  <h3 id="authTitle">Sign in</h3>
+  <p class="sub" id="authSub">Sign in to like and comment on articles.</p>
+  <div class="field">
+    <label for="auth_email">Email</label>
+    <input id="auth_email" type="email" autocomplete="email">
+  </div>
+  <div class="field">
+    <label for="auth_pass">Password</label>
+    <input id="auth_pass" type="password" autocomplete="current-password">
+  </div>
+  <div class="auth-error" id="authError"></div>
+  <button class="publish-btn" id="authSubmit" style="width:100%;">Sign in</button>
+  <button class="cancel-btn" id="authCancel" style="width:100%;margin-left:0;margin-top:8px;">Cancel</button>
+  <div class="auth-switch">
+    <span id="authSwitchText">Don't have an account?</span>
+    <button id="authSwitchBtn">Create one</button>
+  </div>
+</div>
+
+<!-- "READ ALSO" ARTICLE-LINK PICKER (writer tool) -->
+<div id="overlay2" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:65;display:none;"></div>
+<div class="link-picker" id="linkPicker" hidden>
+  <label for="linkPickerSearch" style="font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--chalk-dim);text-transform:uppercase;margin-bottom:6px;display:block;">Link to which article?</label>
+  <input type="text" id="linkPickerSearch" placeholder="Search articles...">
+  <div class="link-picker-list" id="linkPickerList"></div>
+  <button class="cancel-btn" id="linkPickerCancel" style="width:100%;margin-left:0;margin-top:10px;">Cancel</button>
+</div>
+
+<main id="main">
+
+  <!-- FEED VIEW -->
+  <section id="feedView">
+    <!-- Search bar — visual match for the app's search field above the tabs -->
+    <div class="search-bar" id="searchBarStub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+      <span>Search articles, teams, players...</span>
+    </div>
+
+    <div class="view-tabs">
+      <button class="view-tab active" id="tabHome">Home</button>
+      <button class="view-tab" id="tabTrendingOnly">Trending</button>
+    </div>
+
+    <!-- Category chips — same destinations as the sidebar links, just a faster path.
+         "All Stories" lives in the drawer already, so it's deliberately left out here. -->
+    <div class="chip-row" id="chipRow">
+      <button class="chip" data-cat="club">Club Football</button>
+      <button class="chip" data-cat="national">National Teams</button>
+      <button class="chip" data-cat="transfers">Transfers</button>
+    </div>
+
+    <!-- Posts feed (Home / Trending) -->
+    <div id="postsPane">
+      <div class="filter-note" id="filterNote" hidden></div>
+      <div id="feed"></div>
+    </div>
+  </section>
+
+  <!-- SEARCH VIEW -->
+  <section id="searchView" hidden>
+    <button class="back-btn" id="backFromSearch">&larr; Back</button>
+    <div class="search-bar" style="cursor:text;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="searchInput" type="text" placeholder="Search articles, teams, players...">
+    </div>
+    <div id="searchResults"></div>
+  </section>
+
+  <!-- ARTICLE VIEW -->
+  <section id="articleView" hidden>
+    <button class="back-btn" id="backToFeed">&larr; Back</button>
+    <article class="article" id="articleContent"></article>
+  </section>
+
+  <!-- WRITER VIEW -->
+  <section id="writerView" class="writer" hidden>
+    <button class="back-btn" id="backFromWriter">&larr; Cancel</button>
+    <h2 class="display" id="writerHeading">Write a new post</h2>
+    <p class="sub">Fill this in and check the SEO panel before you publish — aim for all green.</p>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="f_category">Category</label>
+        <select id="f_category">
+          <option value="club">Club Football News</option>
+          <option value="national">National Team News</option>
+          <option value="transfers">Transfers &amp; Gossip</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f_keyword">Focus keyword</label>
+        <input id="f_keyword" type="text" placeholder="e.g. transfer window">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="f_author">Author</label>
+      <input id="f_author" type="text" placeholder="e.g. Sir Gabby" value="Footy Post Staff">
+    </div>
+
+    <div class="field">
+      <label for="f_title">Title</label>
+      <input id="f_title" type="text" placeholder="Headline for the post">
+      <div class="char-count" id="titleCount">0 characters</div>
+    </div>
+
+    <div class="field">
+      <label for="f_subtitle">Subtitle (shown on the article page, right under the title)</label>
+      <input id="f_subtitle" type="text" placeholder="A short deck line — separate from the homepage snippet">
+    </div>
+
+    <div class="field">
+      <label for="f_meta">Meta description (shown in Google search results)</label>
+      <textarea id="f_meta" placeholder="One or two sentences summarising the post"></textarea>
+      <div class="char-count" id="metaCount">0 characters</div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="f_image_file">Image</label>
+        <input id="f_image_file" type="file" accept="image/*">
+        <img id="f_image_preview" hidden style="width:100%;max-height:220px;object-fit:cover;border-radius:var(--radius);margin-top:10px;">
+        <label for="f_alt" style="margin-top:12px;">Image alt text</label>
+        <input id="f_alt" type="text" placeholder="Describe the image">
+      </div>
+      <div class="field">
+        <label for="f_tags">Tags</label>
+        <input id="f_tags" type="text" placeholder="e.g. Chelsea, transfer window, Messi">
+        <div class="char-count" style="text-align:left;margin-top:6px;line-height:1.5;">Separate with commas — club names, player names, whatever this post is about. Used for search in the app.</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="f_snippet">Snippet (shown on the homepage card)</label>
+      <textarea id="f_snippet" placeholder="One short sentence to hook readers"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="f_body_rich">Article body</label>
+      <div class="rich-toolbar">
+        <button type="button" data-cmd="bold"><b>B</b></button>
+        <button type="button" data-cmd="italic"><i>I</i></button>
+        <button type="button" data-cmd="underline"><u>U</u></button>
+        <button type="button" data-cmd="formatBlock" data-value="H2">Heading</button>
+        <button type="button" data-cmd="formatBlock" data-value="P">Normal</button>
+        <button type="button" data-cmd="insertUnorderedList">• List</button>
+        <button type="button" id="insertImageBtn">+ Image</button>
+        <button type="button" id="insertPostLinkBtn">🔗 Link to Article</button>
+      </div>
+      <input type="file" id="bodyImageInput" accept="image/*" hidden>
+      <div id="f_body_rich" class="rich-editor" contenteditable="true" data-placeholder="Write the full article here..."></div>
+      <div class="char-count" id="bodyCount">0 words</div>
+    </div>
+
+    <div class="field">
+      <label style="display:inline-flex;align-items:center;gap:8px;font-family:var(--body);text-transform:none;letter-spacing:0;color:var(--chalk);">
+        <input type="checkbox" id="f_trending" style="width:auto;"> Mark as trending
+      </label>
+    </div>
+
+    <div class="seo-panel">
+      <div class="seo-score-row">
+        <div class="seo-score-circle" id="seoScoreCircle">0</div>
+        <div class="seo-score-label" id="seoScoreLabel">Not analysed yet<span>SEO score</span></div>
+      </div>
+      <ul class="seo-checks" id="seoChecks"></ul>
+    </div>
+
+    <button class="publish-btn" id="publishBtn">Publish post</button>
+    <button class="cancel-btn" id="cancelWriter">Cancel</button>
+  </section>
+
+  <!-- ADMIN DASHBOARD: list + edit/delete your own posts -->
+  <section id="dashboardView" hidden>
+    <button class="back-btn" id="backFromDashboard">&larr; Back</button>
+    <h2 class="display" style="font-size:22px;margin-bottom:14px;">Manage posts</h2>
+    <div id="dashboardList"></div>
+  </section>
+
+</main>
+
+<footer>
+  <span id="footerText">© <span id="footerYear">2026</span> <span id="footerSiteName">FOOTY INFORM</span>. All rights reserved.</span><br>
+  <span id="footerAdminNote" style="opacity:.7" hidden>Check the badge next to "+ New Post" — it shows whether posts are shared with every visitor or saved to this browser only. <button id="resetContent" style="background:none;border:none;color:var(--floodlight);font-family:var(--mono);font-size:11px;text-decoration:underline;cursor:pointer;padding:0;">Reset to sample posts</button></span>
+</footer>
+
+<!-- Shared backend (optional). Free to set up — see notes in js/firebase-config.js.
+     If you don't fill in FIREBASE_CONFIG, the site still works fine using
+     this browser's local storage only. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/likes.js"></script>
+<script src="js/comments.js"></script>
+<script src="js/render.js"></script>
+<script src="js/article.js"></script>
+<script src="js/writer.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
