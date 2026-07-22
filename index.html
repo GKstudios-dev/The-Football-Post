@@ -327,12 +327,12 @@ main{max-width:760px;margin:0 auto;padding:26px 18px 60px;}
   font-family:var(--mono);font-size:9px;letter-spacing:.04em;text-transform:uppercase;
 }
 .card-h h3{
-  font-size:15px;margin:4px 0 4px;line-height:1.3;font-weight:800;
+  font-size:15px;margin:4px 0 3px;line-height:1.3;font-weight:800;
   font-family:var(--body);text-transform:none;letter-spacing:0;
-  display:inline;
+  display:block;
 }
 .snippet-h{
-  margin:0;color:var(--ink-dim);font-size:16px;line-height:1.4;
+  display:block;margin:0;color:var(--ink-dim);font-size:16px;line-height:1.4;
 }
 .read-badge{
   font-family:var(--mono);font-size:9px;letter-spacing:.04em;color:#1F4F32;
@@ -411,7 +411,7 @@ background-repeat:no-repeat;background-position:center;
 .big-box-meta{margin:14px 0 8px;display:flex;align-items:center;gap:10px;
   font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;}
 .big-box-title{
-  font-size:25px;line-height:1.22;margin:0 0 10px;color:var(--chalk);
+  font-size:25px;line-height:1.22;margin:0 0 2px;color:var(--chalk);
   font-family:var(--display);text-transform:none;letter-spacing:0;font-weight:600;
   display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;
   min-height:calc(1.22em*4);
@@ -422,8 +422,9 @@ background-repeat:no-repeat;background-position:center;
   min-height:calc(1.55em*4);
 }
 .big-box-foot{
-  display:flex;align-items:center;gap:14px;margin-top:12px;flex-wrap:wrap;
+  display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:12px;flex-wrap:wrap;
 }
+.big-box-actions{display:flex;align-items:center;gap:12px;}
 .big-box-like{
   display:inline-flex;align-items:center;gap:6px;
   background:rgba(255,182,39,0.08);border:1px solid var(--line);color:var(--chalk-dim);
@@ -438,8 +439,6 @@ background-repeat:no-repeat;background-position:center;
 }
 
 /* ============ SECTION DIVIDERS ============ */
-.section-divider-v{display:flex;justify-content:center;margin:26px 0;}
-.section-divider-v::before{content:'';width:1px;height:30px;background:var(--floodlight-dim);}
 .section-divider-h{border:none;border-top:1px solid var(--line);margin:26px 0;}
 
 /* ============ RECOMMENDED FOR YOU (horizontal scroller) ============ */
@@ -1001,6 +1000,12 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     <div class="field">
       <label style="display:inline-flex;align-items:center;gap:8px;font-family:var(--body);text-transform:none;letter-spacing:0;color:var(--chalk);">
         <input type="checkbox" id="f_recommended" style="width:auto;"> Mark as recommended
+      </label>
+    </div>
+
+    <div class="field">
+      <label style="display:inline-flex;align-items:center;gap:8px;font-family:var(--body);text-transform:none;letter-spacing:0;color:var(--chalk);">
+        <input type="checkbox" id="f_latest" style="width:auto;"> Show in "Latest" strip
       </label>
     </div>
 
@@ -1821,7 +1826,7 @@ function cardHtml(p){
           <span>${fmtDate(p.date)}</span>
         </div>
         <h3>${escapeHtml(p.title)}</h3>
-        <span class="snippet-h"> — ${escapeHtml(p.snippet)}</span>
+        <span class="snippet-h">${escapeHtml(p.snippet)}</span>
       </div>
       <div class="card-h-foot">
         ${readBadge}
@@ -1852,11 +1857,13 @@ function bigBoxHtml(p){
       <h2 class="big-box-title">${escapeHtml(p.title)}</h2>
       <p class="big-box-snippet">${escapeHtml(p.snippet)}</p>
       <div class="big-box-foot">
-        <button type="button" class="big-box-like ${isLiked?'liked':''}" data-id="${p.id}" aria-label="${isLiked?'Unlike':'Like'} this post" onclick="handleCardLike(event,'${p.id}')">
-          <span class="heart">${isLiked?'♥':'♡'}</span><span class="like-num">${likeCount}</span>
-        </button>
-        <span class="big-box-comment"><span class="bubble">💬</span>${commentCount}</span>
-        <span class="read-badge">${fmtDate(p.date)} &middot; ${timeAgo(p.date)}</span>
+        <span class="read-badge">${timeAgo(p.date)}</span>
+        <div class="big-box-actions">
+          <span class="big-box-comment"><span class="bubble">💬</span>${commentCount}</span>
+          <button type="button" class="big-box-like ${isLiked?'liked':''}" data-id="${p.id}" aria-label="${isLiked?'Unlike':'Like'} this post" onclick="handleCardLike(event,'${p.id}')">
+            <span class="heart">${isLiked?'♥':'♡'}</span><span class="like-num">${likeCount}</span>
+          </button>
+        </div>
       </div>
     </a>`;
 }
@@ -1911,6 +1918,23 @@ function pickRecommended(limit=12, perCategory=4){
     }
   }
   return picked.slice(0, limit);
+}
+
+// "Latest" strip card — same floated-image layout as cardHtml, but image
+// + title only, no snippet, no like/comment row.
+function latestCardHtml(p){
+  return `
+    <a class="card-h" href="#" data-id="${p.id}">
+      <div class="card-h-flow">
+        <img class="card-h-img" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}" loading="lazy">
+        <div class="card-h-meta">
+          <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
+          <span class="dot">&middot;</span>
+          <span>${fmtDate(p.date)}</span>
+        </div>
+        <h3>${escapeHtml(p.title)}</h3>
+      </div>
+    </a>`;
 }
 
 function attachCardHandlers(container){
@@ -1990,31 +2014,45 @@ function renderFeed(){
     let html = buildCarouselHtml(trendList);
 
     if(list.length){
-      // Walk the sorted list once, handing sequential posts out to each
-      // section below in order (big box, Latest pair, big box, big box,
-      // then everything left over) so nothing on the page repeats.
+      // "Latest" strip: posts the admin flagged via "Show in Latest strip"
+      // come first (most recent first); if fewer than 2 are flagged, fill
+      // the rest with the most recent posts not already picked here.
+      const flaggedLatest = posts
+        .filter(p=>p.latest)
+        .sort((a,b)=> toJSDate(b.date) - toJSDate(a.date));
+      let latestPicks = flaggedLatest.slice(0, 2);
+      if(latestPicks.length < 2){
+        const pickedIds = new Set(latestPicks.map(p=>p.id));
+        const fallback = list.filter(p=>!pickedIds.has(p.id)).slice(0, 2 - latestPicks.length);
+        latestPicks = latestPicks.concat(fallback);
+      }
+      const latestIds = new Set(latestPicks.map(p=>p.id));
+      const [latestA, latestB] = latestPicks;
+
+      // Walk the remaining posts once, handing sequential posts out to each
+      // section below in order (big box, big box, big box, then everything
+      // left over) so nothing on the page repeats.
+      const pool = list.filter(p=>!latestIds.has(p.id));
       let i = 0;
-      const next = () => i < list.length ? list[i++] : null;
+      const next = () => i < pool.length ? pool[i++] : null;
 
       const box1 = next();
-      const latestA = next();
-      const latestB = next();
       const box2 = next();
       const box3 = next();
-      const rest = list.slice(i);
+      const rest = pool.slice(i);
       const recommended = pickRecommended(12, 4);
 
       if(box1) html += bigBoxHtml(box1);
 
       if(latestA || latestB){
-        html += `<div class="section-divider-v"></div>`;
+        html += `<div class="section-divider-h"></div>`;
         html += `<div class="section-label">Latest</div>`;
-        if(latestA) html += cardHtml(latestA);
-        if(latestB) html += cardHtml(latestB);
+        if(latestA) html += latestCardHtml(latestA);
+        if(latestB) html += latestCardHtml(latestB);
       }
 
       if(box2){
-        html += `<div class="section-divider-v"></div>`;
+        html += `<div class="section-divider-h"></div>`;
         html += bigBoxHtml(box2);
       }
 
@@ -2035,7 +2073,7 @@ function renderFeed(){
       if(box3) html += bigBoxHtml(box3);
 
       if(rest.length){
-        html += `<div class="section-divider-v"></div>`;
+        html += `<div class="section-divider-h"></div>`;
         html += rest.map(p=>cardHtml(p)).join('');
       }
     } else if(!trendList.length){
@@ -2471,6 +2509,7 @@ function resetWriterForm(){
   document.getElementById('f_category').value = 'club';
   document.getElementById('f_trending').checked = false;
   document.getElementById('f_recommended').checked = false;
+  document.getElementById('f_latest').checked = false;
   document.getElementById('f_image_file').value = '';
   document.getElementById('f_image_preview').hidden = true;
   currentImageDataUrl = null;
@@ -2492,6 +2531,7 @@ function loadPostIntoWriter(post){
   document.getElementById('f_category').value = post.category || 'club';
   document.getElementById('f_trending').checked = !!post.trending;
   document.getElementById('f_recommended').checked = !!post.recommended;
+  document.getElementById('f_latest').checked = !!post.latest;
   currentImageDataUrl = post.image || null;
   const preview = document.getElementById('f_image_preview');
   if(post.image){ preview.src = post.image; preview.hidden = false; } else { preview.hidden = true; }
@@ -2618,6 +2658,7 @@ document.getElementById('publishBtn').addEventListener('click', ()=>{
   const author = document.getElementById('f_author').value.trim() || 'Footy Post Staff';
   const trending = document.getElementById('f_trending').checked;
   const recommended = document.getElementById('f_recommended').checked;
+  const latest = document.getElementById('f_latest').checked;
   const focusKeyword = document.getElementById('f_keyword').value.trim();
   const tags = document.getElementById('f_tags').value
     .split(',')
@@ -2627,7 +2668,7 @@ document.getElementById('publishBtn').addEventListener('click', ()=>{
   if(!title || !bodyHtml || !meta){ return; }
 
   const postData = {
-    category, trending, recommended, author,
+    category, trending, recommended, latest, author,
     title, subtitle, snippet, image, imageAlt: alt, metaDescription: meta, focusKeyword, tags,
     body: bodyHtml
   };
@@ -2662,7 +2703,7 @@ function renderDashboard(){
       <img class="dash-thumb" src="${p.image}" alt="">
       <div class="dash-info">
         <div class="dash-title">${escapeHtml(p.title)}</div>
-        <div class="dash-meta">${CATEGORY_LABELS[p.category]||p.category} · ${fmtDate(p.date)}${p.trending ? ' · Trending' : ''}${p.recommended ? ' · Recommended' : ''}</div>
+        <div class="dash-meta">${CATEGORY_LABELS[p.category]||p.category} · ${fmtDate(p.date)}${p.trending ? ' · Trending' : ''}${p.recommended ? ' · Recommended' : ''}${p.latest ? ' · Latest' : ''}</div>
       </div>
       <div class="dash-actions">
         <button class="edit-btn" data-id="${p.id}">Edit</button>
