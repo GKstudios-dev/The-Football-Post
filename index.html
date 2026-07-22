@@ -372,7 +372,7 @@ main{max-width:760px;margin:0 auto;padding:26px 18px 60px;}
   margin:24px 0 12px;letter-spacing:.02em;
 }
 .trending-carousel{position:relative;margin-bottom:6px;}
-.trending-track{position:relative;height:280px;border-radius:12px;overflow:hidden;}
+.trending-track{position:relative;aspect-ratio:1200/628;height:auto;border-radius:12px;overflow:hidden;}
 .trending-slide{
   position:absolute;inset:0;background-size:contain;
 background-repeat:no-repeat;background-position:center;
@@ -397,6 +397,74 @@ background-repeat:no-repeat;background-position:center;
 .trending-dots{display:flex;justify-content:center;gap:5px;margin-top:10px;}
 .trending-dot{width:6px;height:6px;border-radius:3px;background:var(--line);transition:width .3s, background .3s;}
 .trending-dot.active{width:18px;background:var(--floodlight);}
+
+/* ============ BIG BOX (BBC-style hero card) ============
+   Image locked to the 1200x628 ratio, title/snippet each reserve
+   room for 4 lines (min-height) and clamp at 4 lines if longer, so
+   every big box is the same height on the page regardless of how
+   short or long the writer's title/snippet turns out to be. */
+.big-box{display:block;margin-bottom:8px;}
+.big-box-img{
+  width:100%;aspect-ratio:1200/628;object-fit:cover;
+  border-radius:12px;display:block;background:var(--pitch-light);
+}
+.big-box-meta{margin:14px 0 8px;display:flex;align-items:center;gap:10px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;}
+.big-box-title{
+  font-size:25px;line-height:1.22;margin:0 0 10px;color:var(--chalk);
+  font-family:var(--display);text-transform:none;letter-spacing:0;font-weight:600;
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;
+  min-height:calc(1.22em*4);
+}
+.big-box-snippet{
+  font-size:15.5px;line-height:1.55;color:var(--chalk-dim);margin:0;
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;
+  min-height:calc(1.55em*4);
+}
+.big-box-foot{
+  display:flex;align-items:center;gap:14px;margin-top:12px;flex-wrap:wrap;
+}
+.big-box-like{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,182,39,0.08);border:1px solid var(--line);color:var(--chalk-dim);
+  border-radius:16px;padding:5px 12px;font-family:var(--body);font-size:12.5px;font-weight:600;
+  transition:background .15s,border-color .15s,color .15s;
+}
+.big-box-like .heart{font-size:14px;line-height:1;}
+.big-box-like.liked{background:rgba(255,182,39,0.16);border-color:var(--floodlight);color:var(--floodlight);}
+.big-box-comment{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--body);font-size:12.5px;color:var(--chalk-dim);
+}
+
+/* ============ SECTION DIVIDERS ============ */
+.section-divider-v{display:flex;justify-content:center;margin:26px 0;}
+.section-divider-v::before{content:'';width:1px;height:30px;background:var(--floodlight-dim);}
+.section-divider-h{border:none;border-top:1px solid var(--line);margin:26px 0;}
+
+/* ============ RECOMMENDED FOR YOU (horizontal scroller) ============ */
+.rec-section{margin:0 0 8px;}
+.rec-head{display:flex;align-items:center;justify-content:space-between;margin:24px 0 12px;}
+.rec-head .section-label{margin:0;}
+.rec-more{
+  background:none;border:none;color:var(--floodlight);
+  font-family:var(--display);font-size:18px;line-height:1;padding:4px 2px;
+}
+.rec-scroller{
+  display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;
+  scroll-behavior:smooth;scrollbar-width:none;
+}
+.rec-scroller::-webkit-scrollbar{display:none;}
+.rec-card{flex:none;width:140px;display:block;}
+.rec-card img{
+  width:140px;height:90px;object-fit:cover;border-radius:8px;
+  display:block;background:var(--pitch-light);margin-bottom:7px;
+}
+.rec-card h4{
+  margin:0;font-size:12.5px;line-height:1.32;color:var(--chalk);
+  font-family:var(--body);font-weight:700;text-transform:none;letter-spacing:0;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+}
 
 /* ============ ARTICLE VIEW ============ */
 .back-btn{
@@ -927,6 +995,12 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     <div class="field">
       <label style="display:inline-flex;align-items:center;gap:8px;font-family:var(--body);text-transform:none;letter-spacing:0;color:var(--chalk);">
         <input type="checkbox" id="f_trending" style="width:auto;"> Mark as trending
+      </label>
+    </div>
+
+    <div class="field">
+      <label style="display:inline-flex;align-items:center;gap:8px;font-family:var(--body);text-transform:none;letter-spacing:0;color:var(--chalk);">
+        <input type="checkbox" id="f_recommended" style="width:auto;"> Mark as recommended
       </label>
     </div>
 
@@ -1548,6 +1622,11 @@ function syncLikeButtonsFor(post){
     cardBtn.querySelector('.heart').textContent = liked ? '♥' : '♡';
     cardBtn.querySelector('.like-num').textContent = count;
   }
+  document.querySelectorAll(`.big-box-like[data-id="${post.id}"]`).forEach(btn=>{
+    btn.classList.toggle('liked', liked);
+    btn.querySelector('.heart').textContent = liked ? '♥' : '♡';
+    btn.querySelector('.like-num').textContent = count;
+  });
   const articleBtn = document.getElementById('likeBtn');
   if(articleBtn && articleBtn.dataset.id === post.id){
     articleBtn.classList.toggle('liked', liked);
@@ -1756,6 +1835,84 @@ function cardHtml(p){
     </a>`;
 }
 
+// BBC-style "big box" hero card: full image (1200x628), title (room for
+// 4 lines), snippet (room for 4 lines), then like/comment/read-time row.
+function bigBoxHtml(p){
+  const isLiked = isPostLikedByViewer(p);
+  const likeCount = p.likes || 0;
+  const commentCount = p.commentCount || 0;
+  return `
+    <a class="big-box" href="#" data-id="${p.id}">
+      <img class="big-box-img" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}" loading="lazy">
+      <div class="big-box-meta">
+        <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
+        <span class="dot">&middot;</span>
+        <span style="color:var(--chalk-dim);">${fmtDate(p.date)}</span>
+      </div>
+      <h2 class="big-box-title">${escapeHtml(p.title)}</h2>
+      <p class="big-box-snippet">${escapeHtml(p.snippet)}</p>
+      <div class="big-box-foot">
+        <button type="button" class="big-box-like ${isLiked?'liked':''}" data-id="${p.id}" aria-label="${isLiked?'Unlike':'Like'} this post" onclick="handleCardLike(event,'${p.id}')">
+          <span class="heart">${isLiked?'♥':'♡'}</span><span class="like-num">${likeCount}</span>
+        </button>
+        <span class="big-box-comment"><span class="bubble">💬</span>${commentCount}</span>
+        <span class="read-badge">${fmtDate(p.date)} &middot; ${timeAgo(p.date)}</span>
+      </div>
+    </a>`;
+}
+function attachBigBoxHandlers(container){
+  container.querySelectorAll('.big-box').forEach(box=>{
+    box.addEventListener('click', (e)=>{
+      if(e.target.closest('.big-box-like')) return;
+      e.preventDefault();
+      openArticle(box.dataset.id);
+    });
+  });
+}
+
+// "Recommended for you" scroller card — image on top (140x90), title below.
+function recCardHtml(p){
+  return `
+    <a class="rec-card" href="#" data-id="${p.id}">
+      <img src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}" loading="lazy">
+      <h4>${escapeHtml(p.title)}</h4>
+    </a>`;
+}
+function attachRecCardHandlers(container){
+  container.querySelectorAll('.rec-card').forEach(card=>{
+    card.addEventListener('click', (e)=>{
+      e.preventDefault();
+      openArticle(card.dataset.id);
+    });
+  });
+}
+
+// Picks the "Recommended for you" row: posts the admin has flagged
+// "recommended" in the dashboard/writer come first (most recent first);
+// if that isn't enough to fill the row, top it up with up to 4 posts per
+// category (most recent first) from whatever's left, until `limit` is hit.
+function pickRecommended(limit=12, perCategory=4){
+  const flagged = posts
+    .filter(p=>p.recommended)
+    .sort((a,b)=> toJSDate(b.date) - toJSDate(a.date));
+  const picked = flagged.slice(0, limit);
+  if(picked.length < limit){
+    const usedIds = new Set(picked.map(p=>p.id));
+    const remaining = posts
+      .filter(p=>!usedIds.has(p.id))
+      .sort((a,b)=> toJSDate(b.date) - toJSDate(a.date));
+    const perCatCount = {};
+    for(const p of remaining){
+      if(picked.length >= limit) break;
+      const c = perCatCount[p.category] || 0;
+      if(c >= perCategory) continue;
+      perCatCount[p.category] = c + 1;
+      picked.push(p);
+    }
+  }
+  return picked.slice(0, limit);
+}
+
 function attachCardHandlers(container){
   container.querySelectorAll('.card-h').forEach(card=>{
     card.addEventListener('click', (e)=>{
@@ -1831,20 +1988,77 @@ function renderFeed(){
     list.sort((a,b)=> (b.trending - a.trending) || (toJSDate(b.date)-toJSDate(a.date)));
 
     let html = buildCarouselHtml(trendList);
+
     if(list.length){
-      html += `<div class="section-label">Latest Stories</div>`;
-      html += list.map(p=>cardHtml(p)).join('');
+      // Walk the sorted list once, handing sequential posts out to each
+      // section below in order (big box, Latest pair, big box, big box,
+      // then everything left over) so nothing on the page repeats.
+      let i = 0;
+      const next = () => i < list.length ? list[i++] : null;
+
+      const box1 = next();
+      const latestA = next();
+      const latestB = next();
+      const box2 = next();
+      const box3 = next();
+      const rest = list.slice(i);
+      const recommended = pickRecommended(12, 4);
+
+      if(box1) html += bigBoxHtml(box1);
+
+      if(latestA || latestB){
+        html += `<div class="section-divider-v"></div>`;
+        html += `<div class="section-label">Latest</div>`;
+        if(latestA) html += cardHtml(latestA);
+        if(latestB) html += cardHtml(latestB);
+      }
+
+      if(box2){
+        html += `<div class="section-divider-v"></div>`;
+        html += bigBoxHtml(box2);
+      }
+
+      if(recommended.length){
+        html += `<div class="section-divider-h"></div>`;
+        html += `
+          <div class="rec-section">
+            <div class="rec-head">
+              <div class="section-label">Recommended for you</div>
+              <button type="button" class="rec-more" id="recScrollMore" aria-label="Scroll for more">&rang;</button>
+            </div>
+            <div class="rec-scroller" id="recScroller">
+              ${recommended.map(recCardHtml).join('')}
+            </div>
+          </div>`;
+      }
+
+      if(box3) html += bigBoxHtml(box3);
+
+      if(rest.length){
+        html += `<div class="section-divider-v"></div>`;
+        html += rest.map(p=>cardHtml(p)).join('');
+      }
     } else if(!trendList.length){
       html += `<div class="empty-state">${feedEmptyMessage('No articles yet — check back soon.')}</div>`;
     }
+
     feed.innerHTML = html;
     attachCardHandlers(feed);
+    attachBigBoxHandlers(feed);
+    attachRecCardHandlers(feed);
     feed.querySelectorAll('.trending-slide').forEach(slide=>{
       slide.addEventListener('click', (e)=>{
         e.preventDefault();
         openArticle(slide.dataset.id);
       });
     });
+    const recScroller = document.getElementById('recScroller');
+    const recMoreBtn = document.getElementById('recScrollMore');
+    if(recScroller && recMoreBtn){
+      recMoreBtn.addEventListener('click', ()=>{
+        recScroller.scrollBy({ left: 300, behavior: 'smooth' });
+      });
+    }
     if(trendList.length) startCarousel(trendList.length);
     return;
   }
@@ -2256,6 +2470,7 @@ function resetWriterForm(){
   document.getElementById('f_body_rich').innerHTML = '';
   document.getElementById('f_category').value = 'club';
   document.getElementById('f_trending').checked = false;
+  document.getElementById('f_recommended').checked = false;
   document.getElementById('f_image_file').value = '';
   document.getElementById('f_image_preview').hidden = true;
   currentImageDataUrl = null;
@@ -2276,6 +2491,7 @@ function loadPostIntoWriter(post){
   document.getElementById('f_tags').value = Array.isArray(post.tags) ? post.tags.join(', ') : (post.tags || '');
   document.getElementById('f_category').value = post.category || 'club';
   document.getElementById('f_trending').checked = !!post.trending;
+  document.getElementById('f_recommended').checked = !!post.recommended;
   currentImageDataUrl = post.image || null;
   const preview = document.getElementById('f_image_preview');
   if(post.image){ preview.src = post.image; preview.hidden = false; } else { preview.hidden = true; }
@@ -2401,6 +2617,7 @@ document.getElementById('publishBtn').addEventListener('click', ()=>{
   const category = document.getElementById('f_category').value;
   const author = document.getElementById('f_author').value.trim() || 'Footy Post Staff';
   const trending = document.getElementById('f_trending').checked;
+  const recommended = document.getElementById('f_recommended').checked;
   const focusKeyword = document.getElementById('f_keyword').value.trim();
   const tags = document.getElementById('f_tags').value
     .split(',')
@@ -2410,7 +2627,7 @@ document.getElementById('publishBtn').addEventListener('click', ()=>{
   if(!title || !bodyHtml || !meta){ return; }
 
   const postData = {
-    category, trending, author,
+    category, trending, recommended, author,
     title, subtitle, snippet, image, imageAlt: alt, metaDescription: meta, focusKeyword, tags,
     body: bodyHtml
   };
@@ -2445,7 +2662,7 @@ function renderDashboard(){
       <img class="dash-thumb" src="${p.image}" alt="">
       <div class="dash-info">
         <div class="dash-title">${escapeHtml(p.title)}</div>
-        <div class="dash-meta">${CATEGORY_LABELS[p.category]||p.category} · ${fmtDate(p.date)}</div>
+        <div class="dash-meta">${CATEGORY_LABELS[p.category]||p.category} · ${fmtDate(p.date)}${p.trending ? ' · Trending' : ''}${p.recommended ? ' · Recommended' : ''}</div>
       </div>
       <div class="dash-actions">
         <button class="edit-btn" data-id="${p.id}">Edit</button>
