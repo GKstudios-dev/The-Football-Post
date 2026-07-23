@@ -80,6 +80,7 @@ button{font-family:inherit;cursor:pointer;}
   position:sticky;top:0;z-index:40;
   display:flex;align-items:center;gap:14px;
   padding:14px 20px;
+  --pitch-dark:#0E2A1B;--chalk:#F4F2E9;--chalk-dim:#C9D3C6;--line:rgba(244,242,233,0.12);
   background:var(--pitch-dark);
   border-bottom:1px solid var(--line);
 }
@@ -118,6 +119,7 @@ button{font-family:inherit;cursor:pointer;}
 
 /* ============ TICKER (signature element) ============ */
 .ticker{
+  --pitch:#163B26;--chalk:#F4F2E9;--chalk-dim:#C9D3C6;--line:rgba(244,242,233,0.12);
   background:var(--pitch);
   border-bottom:1px solid var(--line);
   overflow:hidden;
@@ -272,6 +274,30 @@ button{font-family:inherit;cursor:pointer;}
   background:var(--floodlight);border-color:var(--floodlight);color:var(--ink);
 }
 
+/* ============ HEADER ZONE ============
+   Search bar + Home/Trending tabs + category chips. This band always
+   stays dark green — in light mode the rest of the page turns white
+   starting at the carousel, but this strip (and everything above it:
+   topbar, ticker) keeps its original dark look. Colors are pinned
+   locally so they never flip with data-theme="light" on <html>. */
+#feedView{margin-top:-26px;}
+.header-zone{
+  --pitch-dark:#0E2A1B;--chalk:#F4F2E9;--chalk-dim:#C9D3C6;
+  --line:rgba(244,242,233,0.12);--chalk-line:rgba(244,242,233,0.24);
+  background:var(--pitch-dark);
+  margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);width:100vw;
+  padding:26px 18px 14px;box-sizing:border-box;
+}
+.feed-rail-left,.feed-rail-right{padding-top:26px;}
+.header-zone .chip-row{margin-bottom:0;}
+@media(max-width:480px){
+  #feedView{margin-top:-18px;}
+  .header-zone{padding:18px 12px 12px;}
+}
+@media(min-width:880px){
+  .header-zone{margin-left:0;margin-right:0;width:auto;}
+}
+
 /* ============ MAIN ============ */
 main{max-width:760px;margin:0 auto;padding:26px 18px 60px;}
 
@@ -326,10 +352,12 @@ main{max-width:760px;margin:0 auto;padding:26px 18px 60px;}
   display:flex;gap:0;
   border-bottom:1px solid var(--line);
   margin-bottom:22px;
+  overflow-x:auto;scrollbar-width:none;
 }
+.view-tabs::-webkit-scrollbar{display:none;}
 .view-tab{
   background:none;border:none;
-  padding:10px 4px;margin-right:26px;
+  padding:10px 4px;margin-right:26px;flex:none;white-space:nowrap;
   font-family:var(--display);font-size:16px;letter-spacing:.02em;
   color:var(--chalk-dim);
   border-bottom:2px solid transparent;
@@ -373,6 +401,30 @@ main{max-width:760px;margin:0 auto;padding:26px 18px 60px;}
   border:1px dashed var(--line);border-radius:var(--radius);
   font-family:var(--mono);font-size:12px;
 }
+
+/* ============ AD SLOTS ============
+   Placeholder containers for Google AdSense units. Each one reserves a
+   fixed minimum height up front so nothing on the page jumps around
+   once real ads start loading into them (a big deal for AdSense's own
+   "avoid layout shift" guidance, and just generally nicer to read).
+   Drop the real <ins class="adsbygoogle">…</ins> snippet inside the
+   matching data-ad-slot container and remove the placeholder label —
+   the box, spacing, and margins are already sized to fit. */
+.ad-slot{
+  margin:22px 0;padding:10px;
+  min-height:250px;
+  display:flex;align-items:center;justify-content:center;
+  border:1px dashed var(--line);border-radius:var(--radius);
+  background:var(--pitch-light);
+}
+.ad-slot-label{
+  font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--chalk-dim);
+}
+/* In-feed ad slots sit between cards, same rhythm as the cards themselves */
+#feed .ad-slot,.related-grid .ad-slot{margin:0 0 22px;}
+/* In-article ad slots get a bit more breathing room than a plain paragraph */
+.article-body .ad-slot{margin:28px 0;min-height:250px;}
 
 /* ============ HORIZONTAL CARD (mobile-app style) ============
    Uses a REAL CSS float for the image: the title+snippet text flows in
@@ -925,7 +977,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     <span></span><span></span><span></span>
   </button>
   <div class="brand">
-    <span class="mark" id="brandMark">Footy <em>Inform</em></span>
+    <span class="mark" id="brandMark">The Football <em>Post</em></span>
   </div>
   <button class="write-btn" id="installBtn" hidden style="border-color:var(--floodlight-dim);">Install App</button>
   <span id="modeBadge" hidden style="font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--chalk-dim);border:1px solid var(--line);padding:5px 8px;border-radius:2px;text-transform:uppercase;"></span>
@@ -1086,23 +1138,26 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
       </aside>
 
       <div class="feed-center">
-        <!-- Search bar — visual match for the app's search field above the tabs -->
-        <div class="search-bar" id="searchBarStub">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
-          <span>Search articles, teams, players...</span>
-        </div>
+        <div class="header-zone">
+          <!-- Search bar — visual match for the app's search field above the tabs -->
+          <div class="search-bar" id="searchBarStub">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+            <span>Search articles, teams, players...</span>
+          </div>
 
-        <div class="view-tabs">
-          <button class="view-tab active" id="tabHome">Home</button>
-          <button class="view-tab" id="tabTrendingOnly">Trending</button>
-        </div>
+          <div class="view-tabs">
+            <button class="view-tab active" id="tabHome">Home</button>
+            <button class="view-tab" id="tabTrendingOnly">Trending</button>
+            <button class="view-tab" id="tabFootballNow">Football Now</button>
+          </div>
 
-        <!-- Category chips — same destinations as the sidebar links, just a faster path.
-             "All Stories" lives in the drawer already, so it's deliberately left out here. -->
-        <div class="chip-row" id="chipRow">
-          <button class="chip" data-cat="club">Club Football</button>
-          <button class="chip" data-cat="national">National Teams</button>
-          <button class="chip" data-cat="transfers">Transfers</button>
+          <!-- Category chips — same destinations as the sidebar links, just a faster path.
+               "All Stories" lives in the drawer already, so it's deliberately left out here. -->
+          <div class="chip-row" id="chipRow">
+            <button class="chip" data-cat="club">Club Football</button>
+            <button class="chip" data-cat="national">National Teams</button>
+            <button class="chip" data-cat="transfers">Transfers</button>
+          </div>
         </div>
 
         <!-- Posts feed (Home / Trending) -->
@@ -1158,7 +1213,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
 
     <div class="field">
       <label for="f_author">Author</label>
-      <input id="f_author" type="text" placeholder="e.g. Sir Gabby" value="Footy Post Staff">
+      <input id="f_author" type="text" placeholder="e.g. Sir Gabby" value="The Football Post Staff">
     </div>
 
     <div class="field">
@@ -1230,6 +1285,12 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
     <div class="field">
       <label style="display:inline-flex;align-items:center;gap:8px;font-family:var(--body);text-transform:none;letter-spacing:0;color:var(--chalk);">
         <input type="checkbox" id="f_latest" style="width:auto;"> Show in "Latest" strip
+      </label>
+    </div>
+
+    <div class="field">
+      <label style="display:inline-flex;align-items:center;gap:8px;font-family:var(--body);text-transform:none;letter-spacing:0;color:var(--chalk);">
+        <input type="checkbox" id="f_footballNow" style="width:auto;"> Show in "Football Now" (breaking news — any category)
       </label>
     </div>
 
@@ -1549,7 +1610,7 @@ function escapeHtml(str){
    ADMIN GATE — regular readers never see "Admin," "+ New Post,"
    or any delete controls at all. To reach admin mode yourself,
    open the site with #admin on the end of the URL, e.g.:
-     https://gkstudioshq.github.io/FootyInform/#admin
+     https://yourdomain.com/#admin
    Bookmark that link for yourself — that's your private way in.
    Once you sign in there, the site remembers you (Firebase keeps
    you signed in), so you'll see the admin controls on later visits
@@ -2054,6 +2115,32 @@ function stopCarousel(){
   if(carouselTimer){ clearInterval(carouselTimer); carouselTimer = null; }
 }
 
+// One placeholder ad container. `id` just has to be unique on the page
+// so multiple slots don't collide — swap the placeholder markup inside
+// for a real <ins class="adsbygoogle"> unit when wiring up AdSense.
+function adSlotHtml(id){
+  return `
+    <div class="ad-slot" data-ad-slot="${id}">
+      <span class="ad-slot-label">Advertisement</span>
+    </div>`;
+}
+
+// Interleaves an ad slot every `every` cards in a list of already-built
+// card HTML strings — used for the plain vertical feed lists (category
+// view, the "rest of the feed" list, trending list). Never puts one
+// right at the very end of the list.
+function cardsWithAds(cardsHtmlArr, every, prefix){
+  let out = '';
+  cardsHtmlArr.forEach((html, i)=>{
+    out += html;
+    const position = i + 1;
+    if(position % every === 0 && position < cardsHtmlArr.length){
+      out += adSlotHtml(`${prefix}-${position}`);
+    }
+  });
+  return out;
+}
+
 function cardHtml(p){
   const readBadge = p.readAt ? `<div class="read-badge">Read ${timeAgo(p.readAt)}</div>` : '<span></span>';
   const isLiked = isPostLikedByViewer(p);
@@ -2400,7 +2487,7 @@ function renderFeed(){
       feed.innerHTML = `<div class="empty-state">${feedEmptyMessage('No articles in this category yet.')}</div>`;
       return;
     }
-    feed.innerHTML = list.map(p=>cardHtml(p)).join('');
+    feed.innerHTML = cardsWithAds(list.map(p=>cardHtml(p)), 4, 'cat');
     attachCardHandlers(feed);
     return;
   }
@@ -2442,6 +2529,7 @@ function renderFeed(){
       const recommended = pickRecommended(12, 4);
 
       if(box1) html += bigBoxHtml(box1);
+      html += adSlotHtml('home-top');
 
       if(latestA || latestB){
         html += `<div class="section-divider-h"></div>`;
@@ -2473,10 +2561,11 @@ function renderFeed(){
       }
 
       if(box3) html += bigBoxHtml(box3);
+      if(recommended.length) html += adSlotHtml('home-mid');
 
       if(rest.length){
         html += `<div class="section-divider-h"></div>`;
-        html += rest.map(p=>cardHtml(p)).join('');
+        html += cardsWithAds(rest.map(p=>cardHtml(p)), 4, 'home-rest');
       }
     } else if(!trendList.length){
       html += `<div class="empty-state">${feedEmptyMessage('No articles yet — check back soon.')}</div>`;
@@ -2509,6 +2598,24 @@ function renderFeed(){
     return;
   }
 
+  if(state.sort === 'footballNow'){
+    // Breaking news — any post the admin flagged "Football Now", regardless
+    // of its category (club/national/transfers). Same big-card treatment as
+    // Trending, newest first, since this is meant to read as "what's
+    // happening right now" rather than a themed section.
+    list = list.filter(p=>p.footballNow);
+    list.sort((a,b)=> toJSDate(b.date)-toJSDate(a.date));
+
+    if(list.length === 0){
+      feed.innerHTML = `<div class="empty-state">${feedEmptyMessage('No breaking news right now — check back soon.')}</div>`;
+      return;
+    }
+
+    feed.innerHTML = cardsWithAds(list.map(p=>bigBoxHtml(p)), 3, 'footballnow');
+    attachBigBoxHandlers(feed);
+    return;
+  }
+
   // state.sort === 'trendingOnly' — only posts marked "trending" in the
   // dashboard, shown as big cards only (one after another), newest
   // first. Mirrors the app's Trending tab.
@@ -2520,7 +2627,7 @@ function renderFeed(){
     return;
   }
 
-  feed.innerHTML = list.map(p=>bigBoxHtml(p)).join('');
+  feed.innerHTML = cardsWithAds(list.map(p=>bigBoxHtml(p)), 3, 'trend');
   attachBigBoxHandlers(feed);
 }
 
@@ -2667,9 +2774,10 @@ function openArticle(id){
     ${p.subtitle ? `<p class="article-subtitle">${escapeHtml(p.subtitle)}</p>` : ''}
     <img class="article-hero" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}">
     ${p.imageAlt ? `<div class="img-caption">${escapeHtml(p.imageAlt)}</div>` : ''}
-    <div class="byline">By <b>${escapeHtml(p.author || 'Footy Post Staff')}</b> &middot; ${fmtDate(p.date)}</div>
+    <div class="byline">By <b>${escapeHtml(p.author || 'The Football Post Staff')}</b> &middot; ${fmtDate(p.date)}</div>
     <div class="read-status" id="readStatus">Read just now</div>
     <div class="article-body">${bodyHtml}</div>
+    ${adSlotHtml('article-end')}
     <div class="like-row">
       <button class="like-btn ${isLiked ? 'liked' : ''}" id="likeBtn" data-id="${id}">
         <span class="heart">${isLiked ? '♥' : '♡'}</span>
@@ -2718,7 +2826,19 @@ function openArticle(id){
 function bodyToHtml(body){
   if(!body) return '';
   if(Array.isArray(body)){
-    return body.map(block=> block.startsWith('## ') ? `<h2>${escapeHtml(block.slice(3))}</h2>` : `<p>${escapeHtml(block)}</p>`).join('');
+    const blocks = body.map(block=> block.startsWith('## ') ? `<h2>${escapeHtml(block.slice(3))}</h2>` : `<p>${escapeHtml(block)}</p>`);
+    // A few paragraphs before the first ad, then reasonable spacing
+    // between any further ones — never one right at the very end.
+    let out = '';
+    blocks.forEach((block, i)=>{
+      out += block;
+      const position = i + 1;
+      const dueForAd = position === 3 || (position > 3 && (position - 3) % 6 === 0);
+      if(dueForAd && position < blocks.length){
+        out += adSlotHtml(`article-${position}`);
+      }
+    });
+    return out;
   }
   return body;
 }
@@ -2912,12 +3032,13 @@ function resetWriterForm(){
   document.getElementById('writerHeading').textContent = 'Write a new post';
   document.getElementById('publishBtn').textContent = 'Publish post';
   ['f_title','f_subtitle','f_meta','f_keyword','f_alt','f_snippet','f_tags'].forEach(id=> document.getElementById(id).value='');
-  document.getElementById('f_author').value = 'Footy Post Staff';
+  document.getElementById('f_author').value = 'The Football Post Staff';
   document.getElementById('f_body_rich').innerHTML = '';
   document.getElementById('f_category').value = 'club';
   document.getElementById('f_trending').checked = false;
   document.getElementById('f_recommended').checked = false;
   document.getElementById('f_latest').checked = false;
+  document.getElementById('f_footballNow').checked = false;
   document.getElementById('f_image_file').value = '';
   document.getElementById('f_image_preview').hidden = true;
   currentImageDataUrl = null;
@@ -2932,7 +3053,7 @@ function loadPostIntoWriter(post){
   document.getElementById('f_subtitle').value = post.subtitle || '';
   document.getElementById('f_meta').value = post.metaDescription || post.snippet || '';
   document.getElementById('f_keyword').value = post.focusKeyword || '';
-  document.getElementById('f_author').value = post.author || 'Footy Post Staff';
+  document.getElementById('f_author').value = post.author || 'The Football Post Staff';
   document.getElementById('f_alt').value = post.imageAlt || '';
   document.getElementById('f_snippet').value = post.snippet || '';
   document.getElementById('f_tags').value = Array.isArray(post.tags) ? post.tags.join(', ') : (post.tags || '');
@@ -2940,6 +3061,7 @@ function loadPostIntoWriter(post){
   document.getElementById('f_trending').checked = !!post.trending;
   document.getElementById('f_recommended').checked = !!post.recommended;
   document.getElementById('f_latest').checked = !!post.latest;
+  document.getElementById('f_footballNow').checked = !!post.footballNow;
   currentImageDataUrl = post.image || null;
   const preview = document.getElementById('f_image_preview');
   if(post.image){ preview.src = post.image; preview.hidden = false; } else { preview.hidden = true; }
@@ -3063,10 +3185,11 @@ document.getElementById('publishBtn').addEventListener('click', ()=>{
   const image = currentImageDataUrl || 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?q=80&w=1200&auto=format&fit=crop';
   const alt = document.getElementById('f_alt').value.trim();
   const category = document.getElementById('f_category').value;
-  const author = document.getElementById('f_author').value.trim() || 'Footy Post Staff';
+  const author = document.getElementById('f_author').value.trim() || 'The Football Post Staff';
   const trending = document.getElementById('f_trending').checked;
   const recommended = document.getElementById('f_recommended').checked;
   const latest = document.getElementById('f_latest').checked;
+  const footballNow = document.getElementById('f_footballNow').checked;
   const focusKeyword = document.getElementById('f_keyword').value.trim();
   const tags = document.getElementById('f_tags').value
     .split(',')
@@ -3076,7 +3199,7 @@ document.getElementById('publishBtn').addEventListener('click', ()=>{
   if(!title || !bodyHtml || !meta){ return; }
 
   const postData = {
-    category, trending, recommended, latest, author,
+    category, trending, recommended, latest, footballNow, author,
     title, subtitle, snippet, image, imageAlt: alt, metaDescription: meta, focusKeyword, tags,
     body: bodyHtml
   };
@@ -3217,13 +3340,15 @@ document.querySelectorAll('.nav-item[data-link]').forEach(el=>{
    marked "trending" in the dashboard) — matches the app's Home/Trending tabs */
 const tabHome = document.getElementById('tabHome');
 const tabTrendingOnly = document.getElementById('tabTrendingOnly');
+const tabFootballNow = document.getElementById('tabFootballNow');
 
 function activateTab(btn){
-  [tabHome,tabTrendingOnly].forEach(b=>b.classList.remove('active'));
+  [tabHome,tabTrendingOnly,tabFootballNow].forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
 }
 tabHome.addEventListener('click', ()=>{ state.sort='home'; activateTab(tabHome); renderFeed(); });
 tabTrendingOnly.addEventListener('click', ()=>{ state.sort='trendingOnly'; activateTab(tabTrendingOnly); renderFeed(); });
+tabFootballNow.addEventListener('click', ()=>{ state.sort='footballNow'; activateTab(tabFootballNow); renderFeed(); });
 
 /* =========================================================
    VIEW SWITCHING
