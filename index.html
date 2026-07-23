@@ -22,6 +22,7 @@
   --floodlight:#FFB627;      /* amber accent — floodlight glow */
   --floodlight-dim:#8A6420;
   --line:rgba(244,242,233,0.12);
+  --chalk-line:rgba(244,242,233,0.24); /* visible pitch-marking divider between stacked cards */
   --card-bg:#F4F2E9;
   --good:#3F9D63;
   --warn:#E0A012;
@@ -152,6 +153,7 @@ button{font-family:inherit;cursor:pointer;}
   font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--chalk-dim);
   padding:14px 20px 6px;text-transform:uppercase;
 }
+.sidebar-divider{border-top:1px solid var(--chalk-line);margin:14px 20px 8px;}
 .nav-item{
   display:flex;align-items:center;gap:12px;
   padding:13px 20px;
@@ -464,6 +466,10 @@ background-repeat:no-repeat;background-position:center;
    every big box is the same height on the page regardless of how
    short or long the writer's title/snippet turns out to be. */
 .big-box{display:block;margin-bottom:8px;}
+/* When big cards are stacked back-to-back with nothing else between them
+   (the Trending tab), draw a thin visible line between them — no extra
+   gap added, it just sits in the existing margin. */
+.big-box + .big-box{border-top:1px solid var(--chalk-line);}
 .big-box-img{
   width:100%;aspect-ratio:1200/628;object-fit:cover;
   border-radius:12px;display:block;background:var(--pitch-light);
@@ -498,7 +504,7 @@ background-repeat:no-repeat;background-position:center;
 }
 
 /* ============ SECTION DIVIDERS ============ */
-.section-divider-h{border:none;border-top:1px solid var(--line);margin:26px 0;}
+.section-divider-h{border:none;border-top:1px solid var(--chalk-line);margin:26px 0;}
 
 /* ============ RECOMMENDED FOR YOU (horizontal scroller) ============ */
 .rec-section{margin:0 0 8px;}
@@ -868,7 +874,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
 
   <!-- Footer-style links — same destinations as the app drawer
        (About Us, Privacy Policy, Terms of Use, Contact Us, Support/FAQs). -->
-  <div class="nav-section-label">More</div>
+  <div class="sidebar-divider"></div>
   <a href="#" class="nav-item" data-link="https://gkstudios-dev.github.io/The-Football-Post/Privacy_Policy.html">
     <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6l7-3z"/></svg>
     Privacy Policy
@@ -1909,8 +1915,6 @@ function cardHtml(p){
         <img class="card-h-img" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}" loading="lazy">
         <div class="card-h-meta">
           <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
-          <span class="dot">&middot;</span>
-          <span>${fmtDate(p.date)}</span>
         </div>
         <h3>${escapeHtml(p.title)}</h3>
         <span class="snippet-h">${escapeHtml(p.snippet)}</span>
@@ -1938,8 +1942,6 @@ function bigBoxHtml(p){
       <img class="big-box-img" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}" loading="lazy">
       <div class="big-box-meta">
         <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
-        <span class="dot">&middot;</span>
-        <span style="color:var(--chalk-dim);">${fmtDate(p.date)}</span>
       </div>
       <h2 class="big-box-title">${escapeHtml(p.title)}</h2>
       <p class="big-box-snippet">${escapeHtml(p.snippet)}</p>
@@ -2023,8 +2025,6 @@ function latestCardHtml(p){
         <img class="card-h-img" src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}" loading="lazy">
         <div class="card-h-meta">
           <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
-          <span class="dot">&middot;</span>
-          <span>${fmtDate(p.date)}</span>
         </div>
         <h3>${escapeHtml(p.title)}</h3>
       </div>
