@@ -69,6 +69,7 @@
 
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
+html{background:var(--pitch-dark);}
 body{
   background:var(--pitch-dark);
   color:var(--chalk);
@@ -780,7 +781,11 @@ background-repeat:no-repeat;background-position:center;
   box-shadow:0 14px 34px rgba(0,0,0,.45);
   display:flex;flex-direction:column;
 }
-.link-picker input[type="text"]{margin-bottom:10px;}
+.link-picker input[type="text"]{
+  width:100%;background:var(--pitch-dark);border:1px solid var(--line);color:var(--chalk);
+  padding:10px 12px;font-family:var(--body);font-size:14px;border-radius:var(--radius);
+  margin-bottom:10px;
+}
 .link-picker-list{overflow-y:auto;flex:1;}
 .link-picker-item{
   display:block;width:100%;text-align:left;
