@@ -6,6 +6,16 @@
 <title>The football Post — Club, National Team &amp; Transfer News</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0E2A1B">
+<script>
+  // Applied immediately (before body renders) so the site doesn't flash
+  // dark-then-light or light-then-dark on load.
+  (function(){
+    try{
+      var saved = localStorage.getItem('theme');
+      if(saved === 'light') document.documentElement.setAttribute('data-theme','light');
+    }catch(e){}
+  })();
+</script>
 <meta name="description" content="The Football Post-football coverage: club news, national team news, and transfer gossip.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -31,6 +41,22 @@
   --display:'Oswald',sans-serif;
   --body:'Inter',sans-serif;
   --mono:'Space Mono',monospace;
+}
+
+/* ============ LIGHT MODE ============
+   Toggled by adding data-theme="light" to <html>. Dark mode above is
+   untouched — this block only overrides the tokens that need to flip:
+   backgrounds go white, body/panel text goes black, and titles +
+   subtitles go dark green (handled separately below, since --chalk
+   itself becomes black and titles need to stay green, not black). */
+:root[data-theme="light"]{
+  --pitch-dark:#FFFFFF;
+  --pitch:#FFFFFF;
+  --pitch-light:#EDEDED;
+  --chalk:#000000;
+  --chalk-dim:#1A1A1A;
+  --line:rgba(0,0,0,.14);
+  --chalk-line:rgba(0,0,0,.18);
 }
 
 *{box-sizing:border-box;}
@@ -250,6 +276,47 @@ button{font-family:inherit;cursor:pointer;}
 
 /* ============ MAIN ============ */
 main{max-width:760px;margin:0 auto;padding:26px 18px 60px;}
+
+/* ============ DESKTOP THREE-COLUMN LAYOUT (BBC-style) ============
+   Mobile/tablet: unchanged — a single stacked column (the rails below
+   are simply hidden and feed-center behaves like a plain div).
+   Wide desktop: category rail on the left, the normal feed in the
+   middle, trending/latest stories on the right — all three visible
+   at once and scrolling independently once they hit the header height. */
+.feed-rail-left,.feed-rail-right{display:none;}
+
+.rail-block{margin-bottom:28px;}
+.rail-block .section-label{margin:0 0 12px;}
+.rail-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 0;border-bottom:1px solid var(--chalk-line);
+}
+.rail-item:last-child{border-bottom:none;}
+.rail-item-img{width:56px;height:56px;object-fit:cover;border-radius:4px;flex:none;background:var(--pitch-light);}
+.rail-item-title{
+  font-size:13px;line-height:1.35;color:var(--chalk);
+  font-family:var(--body);font-weight:600;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+}
+.rail-item-text-only{padding:8px 0;}
+.rail-empty{font-family:var(--mono);font-size:11px;color:var(--chalk-dim);}
+
+@media(min-width:1080px){
+  main{max-width:1220px;}
+  .feed-layout{
+    display:grid;
+    grid-template-columns:200px minmax(0,1fr) 300px;
+    gap:36px;
+    align-items:start;
+  }
+  .feed-rail-left,.feed-rail-right{display:block;}
+  .feed-rail-left{position:sticky;top:78px;}
+  .feed-rail-right{position:sticky;top:78px;max-height:calc(100vh - 100px);overflow-y:auto;}
+  /* Rail nav-items don't need the sidebar's own padding/left-border look
+     — trim them down to sit naturally in a narrow column. */
+  .feed-rail-left .nav-item{padding:10px 8px;border-left:none;border-radius:var(--radius);}
+  .feed-rail-left .nav-item.active{border-left:none;background:var(--pitch-light);}
+}
 
 .view-tabs{
   display:flex;gap:0;
@@ -510,6 +577,7 @@ background-repeat:no-repeat;background-position:center;
 .rec-section{margin:0 0 8px;}
 .rec-head{display:flex;align-items:center;justify-content:space-between;margin:24px 0 12px;}
 .rec-head .section-label{margin:0;}
+.rec-nav{display:flex;gap:6px;}
 .rec-more{
   background:none;border:none;color:var(--floodlight);
   font-family:var(--display);font-size:18px;line-height:1;padding:4px 2px;
@@ -541,7 +609,7 @@ background-repeat:no-repeat;background-position:center;
 .back-btn:hover{border-color:var(--floodlight);color:var(--floodlight);}
 .article-hero{width:100%;height:260px;object-fit:cover;border-radius:var(--radius);margin-bottom:18px;}
 .article-meta{font-family:var(--mono);font-size:11px;color:var(--chalk-dim);margin-bottom:8px;display:flex;gap:10px;align-items:center;}
-.article h1{font-size:32px;line-height:1.1;margin:0 0 16px;}
+.article h1{font-size:32px;line-height:1.1;margin:0 0 16px;text-transform:lowercase;}
 .article-body{font-size:19px;line-height:1.85;color:var(--chalk);}
 .article-body p{margin:0 0 18px;}
 .article-body h2{font-family:var(--display);font-size:20px;margin:26px 0 12px;color:var(--floodlight);}
@@ -551,7 +619,7 @@ background-repeat:no-repeat;background-position:center;
 
 .article-subtitle{
   font-family:var(--body);font-size:17px;line-height:1.5;color:var(--chalk-dim);
-  margin:0 0 18px;font-weight:500;
+  margin:0 0 18px;font-weight:500;text-transform:lowercase;
 }
 .img-caption{
   font-family:var(--mono);font-size:11px;color:var(--chalk-dim);
@@ -811,6 +879,37 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
   outline:2px solid var(--floodlight);outline-offset:2px;
 }
 
+/* ============ THEME TOGGLE (top right corner) ============ */
+.theme-toggle{
+  width:38px;height:34px;flex:none;margin-left:auto;
+  background:transparent;border:1px solid var(--line);
+  border-radius:var(--radius);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--floodlight);
+  transition:border-color .2s;
+}
+.theme-toggle:hover{border-color:var(--floodlight);}
+.theme-toggle svg{width:17px;height:17px;}
+.theme-toggle .icon-sun{display:none;}
+[data-theme="light"] .theme-toggle .icon-moon{display:none;}
+[data-theme="light"] .theme-toggle .icon-sun{display:block;}
+
+/* When the toggle isn't the last element in the topbar (extra buttons
+   get un-hidden by JS after sign-in), it still stays pinned to the
+   far right. */
+.topbar .theme-toggle{order:99;}
+
+/* ============ LIGHT MODE: article title + article subtitle only ============
+   Everything else in light mode inherits black text from --chalk
+   above; only the article page's title and subtitle get dark green. */
+[data-theme="light"] .article h1,
+[data-theme="light"] .article-subtitle{
+  color:#0E2A1B;
+}
+[data-theme="light"] .article h1{
+  font-weight:700;
+}
+
 </style>
 </head>
 <body>
@@ -830,6 +929,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
   <button class="write-btn" id="adminBtn">Admin</button>
   <button class="write-btn" id="openWriter" hidden>+ New Post</button>
   <button class="write-btn" id="openDashboard" hidden style="margin-left:6px;">Dashboard</button>
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle light / dark mode" title="Toggle light / dark mode">
+    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+  </button>
 </header>
 
 <div class="ticker">
@@ -919,6 +1022,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
 <div class="auth-modal" id="authModal" hidden>
   <h3 id="authTitle">Sign in</h3>
   <p class="sub" id="authSub">Sign in to like and comment on articles.</p>
+  <div class="field" id="authUsernameField" hidden>
+    <label for="auth_username">Username</label>
+    <input id="auth_username" type="text" maxlength="30" autocomplete="nickname" placeholder="Pick any name — this is what others see">
+  </div>
   <div class="field">
     <label for="auth_email">Email</label>
     <input id="auth_email" type="email" autocomplete="email">
@@ -949,29 +1056,63 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
 
   <!-- FEED VIEW -->
   <section id="feedView">
-    <!-- Search bar — visual match for the app's search field above the tabs -->
-    <div class="search-bar" id="searchBarStub">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
-      <span>Search articles, teams, players...</span>
-    </div>
+    <div class="feed-layout">
 
-    <div class="view-tabs">
-      <button class="view-tab active" id="tabHome">Home</button>
-      <button class="view-tab" id="tabTrendingOnly">Trending</button>
-    </div>
+      <!-- Desktop-only left rail: same category links as the sidebar
+           drawer, just always visible on wide screens (BBC-style nav
+           column). Reuses .nav-item so clicks are already wired up by
+           the existing nav-item[data-cat] handlers below. -->
+      <aside class="feed-rail-left" aria-label="Categories">
+        <div class="nav-section-label">Categories</div>
+        <a href="#" class="nav-item" data-cat="all">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          All Stories
+        </a>
+        <a href="#" class="nav-item" data-cat="club">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
+          Club Football News
+        </a>
+        <a href="#" class="nav-item" data-cat="national">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 3v18M5 4h13l-2.5 3L18 10H5"/></svg>
+          National Team News
+        </a>
+        <a href="#" class="nav-item" data-cat="transfers">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 7h10M7 7l3-3M7 7l3 3M17 17H7M17 17l-3-3M17 17l-3 3"/></svg>
+          Transfers &amp; Gossip
+        </a>
+      </aside>
 
-    <!-- Category chips — same destinations as the sidebar links, just a faster path.
-         "All Stories" lives in the drawer already, so it's deliberately left out here. -->
-    <div class="chip-row" id="chipRow">
-      <button class="chip" data-cat="club">Club Football</button>
-      <button class="chip" data-cat="national">National Teams</button>
-      <button class="chip" data-cat="transfers">Transfers</button>
-    </div>
+      <div class="feed-center">
+        <!-- Search bar — visual match for the app's search field above the tabs -->
+        <div class="search-bar" id="searchBarStub">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+          <span>Search articles, teams, players...</span>
+        </div>
 
-    <!-- Posts feed (Home / Trending) -->
-    <div id="postsPane">
-      <div class="filter-note" id="filterNote" hidden></div>
-      <div id="feed"></div>
+        <div class="view-tabs">
+          <button class="view-tab active" id="tabHome">Home</button>
+          <button class="view-tab" id="tabTrendingOnly">Trending</button>
+        </div>
+
+        <!-- Category chips — same destinations as the sidebar links, just a faster path.
+             "All Stories" lives in the drawer already, so it's deliberately left out here. -->
+        <div class="chip-row" id="chipRow">
+          <button class="chip" data-cat="club">Club Football</button>
+          <button class="chip" data-cat="national">National Teams</button>
+          <button class="chip" data-cat="transfers">Transfers</button>
+        </div>
+
+        <!-- Posts feed (Home / Trending) -->
+        <div id="postsPane">
+          <div class="filter-note" id="filterNote" hidden></div>
+          <div id="feed"></div>
+        </div>
+      </div>
+
+      <!-- Desktop-only right rail: trending + latest stories, filled in
+           by renderDesktopRail() every time the feed re-renders. -->
+      <aside class="feed-rail-right" id="desktopRailRight" aria-label="Trending and latest stories"></aside>
+
     </div>
   </section>
 
@@ -1528,7 +1669,7 @@ function renderSidebarAccount(){
       <button class="sidebar-account" id="sidebarAccountBtn">
         <svg class="acct-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg>
         <span class="acct-text">
-          <span class="acct-main">${escapeHtml(user.email || 'Signed in')}</span>
+          <span class="acct-main">${escapeHtml(user.displayName || user.email || 'Signed in')}</span>
           <span class="acct-sub">Tap to sign out</span>
         </span>
       </button>`;
@@ -1559,6 +1700,7 @@ function openAuthModal(mode){
   }
   authModalMode = mode || 'signin';
   document.getElementById('authError').textContent = '';
+  document.getElementById('auth_username').value = '';
   document.getElementById('auth_email').value = '';
   document.getElementById('auth_pass').value = '';
   updateAuthModalMode();
@@ -1573,6 +1715,7 @@ function closeAuthModal(){
 }
 function updateAuthModalMode(){
   const signUp = authModalMode === 'signup';
+  document.getElementById('authUsernameField').hidden = !signUp;
   document.getElementById('authTitle').textContent = signUp ? 'Create your account' : 'Sign in';
   document.getElementById('authSub').textContent = signUp
     ? 'Takes a few seconds — lets you like and comment on articles.'
@@ -1590,14 +1733,17 @@ document.getElementById('authSwitchBtn').addEventListener('click', ()=>{
   updateAuthModalMode();
 });
 document.getElementById('authSubmit').addEventListener('click', ()=>{
+  const username = document.getElementById('auth_username').value.trim();
   const email = document.getElementById('auth_email').value.trim();
   const pass = document.getElementById('auth_pass').value;
   const errBox = document.getElementById('authError');
   errBox.textContent = '';
   if(!email || !pass){ errBox.textContent = 'Enter an email and password.'; return; }
+  if(authModalMode === 'signup' && !username){ errBox.textContent = 'Pick a username.'; return; }
 
   const method = authModalMode === 'signup'
     ? firebase.auth().createUserWithEmailAndPassword(email, pass)
+      .then(cred => cred.user.updateProfile({ displayName: username }).then(()=>cred))
     : firebase.auth().signInWithEmailAndPassword(email, pass);
 
   method
@@ -1793,7 +1939,7 @@ function renderCommentList(comments, postId, scopeEl){
     return `
       <div class="comment-item" data-id="${c.id}">
         <div class="comment-head">
-          <span class="comment-author">${escapeHtml(c.userEmail || 'Anonymous')}</span>
+          <span class="comment-author">${escapeHtml(c.userName || c.userEmail || 'Anonymous')}</span>
           <span class="comment-time">${commentTimeAgo(c.createdAt)}</span>
         </div>
         <div class="comment-text">${escapeHtml(c.text || '')}</div>
@@ -1858,6 +2004,7 @@ function submitComment(postId, scopeEl){
   batch.set(commentRef, {
     userId: user.uid,
     userEmail: user.email || 'Anonymous',
+    userName: user.displayName || '',
     text: text,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
@@ -2184,10 +2331,52 @@ function feedEmptyMessage(fallback){
   return fallback;
 }
 
+// Fills the desktop-only right rail (BBC-style "Trending Now" / "Latest
+// Stories" column). No-op on mobile/tablet since the rail is hidden
+// there anyway, but it's cheap enough to just always keep it in sync.
+function renderDesktopRail(){
+  const railEl = document.getElementById('desktopRailRight');
+  if(!railEl) return;
+
+  const trending = posts.filter(p=>p.trending)
+    .sort((a,b)=> toJSDate(b.date)-toJSDate(a.date)).slice(0,5);
+  const latest = posts.slice()
+    .sort((a,b)=> toJSDate(b.date)-toJSDate(a.date)).slice(0,6);
+
+  const trendHtml = trending.length ? trending.map(p=>`
+    <a href="#" class="rail-item" data-id="${p.id}">
+      <img class="rail-item-img" src="${p.image||''}" alt="">
+      <span class="rail-item-title">${escapeHtml(p.title)}</span>
+    </a>`).join('') : `<div class="rail-empty">No trending stories yet.</div>`;
+
+  const latestHtml = latest.length ? latest.map(p=>`
+    <a href="#" class="rail-item rail-item-text-only" data-id="${p.id}">
+      <span class="rail-item-title">${escapeHtml(p.title)}</span>
+    </a>`).join('') : `<div class="rail-empty">No stories yet.</div>`;
+
+  railEl.innerHTML = `
+    <div class="rail-block">
+      <div class="section-label">Trending Now</div>
+      ${trendHtml}
+    </div>
+    <div class="rail-block">
+      <div class="section-label">Latest Stories</div>
+      ${latestHtml}
+    </div>`;
+
+  railEl.querySelectorAll('.rail-item').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.preventDefault();
+      openArticle(el.dataset.id);
+    });
+  });
+}
+
 function renderFeed(){
   const feed = document.getElementById('feed');
   const note = document.getElementById('filterNote');
   stopCarousel();
+  renderDesktopRail();
   let list = posts.slice();
 
   if(state.category !== 'all'){
@@ -2269,7 +2458,10 @@ function renderFeed(){
           <div class="rec-section">
             <div class="rec-head">
               <div class="section-label">Recommended for you</div>
-              <button type="button" class="rec-more" id="recScrollMore" aria-label="Scroll for more">&rang;</button>
+              <div class="rec-nav">
+                <button type="button" class="rec-more" id="recScrollLess" aria-label="Scroll left">&lang;</button>
+                <button type="button" class="rec-more" id="recScrollMore" aria-label="Scroll for more">&rang;</button>
+              </div>
             </div>
             <div class="rec-scroller" id="recScroller">
               ${recommended.map(recCardHtml).join('')}
@@ -2299,9 +2491,15 @@ function renderFeed(){
     });
     const recScroller = document.getElementById('recScroller');
     const recMoreBtn = document.getElementById('recScrollMore');
+    const recLessBtn = document.getElementById('recScrollLess');
     if(recScroller && recMoreBtn){
       recMoreBtn.addEventListener('click', ()=>{
         recScroller.scrollBy({ left: 300, behavior: 'smooth' });
+      });
+    }
+    if(recScroller && recLessBtn){
+      recLessBtn.addEventListener('click', ()=>{
+        recScroller.scrollBy({ left: -300, behavior: 'smooth' });
       });
     }
     if(trendList.length) startCarousel(trendList.length);
@@ -2947,6 +3145,23 @@ const sidebar = document.getElementById('sidebar');
 const overlay = document.getElementById('overlay');
 const hamburger = document.getElementById('hamburger');
 
+/* =========================================================
+   THEME TOGGLE (light / dark)
+   ========================================================= */
+const themeToggle = document.getElementById('themeToggle');
+function setTheme(theme){
+  if(theme === 'light'){
+    document.documentElement.setAttribute('data-theme','light');
+  }else{
+    document.documentElement.removeAttribute('data-theme');
+  }
+  try{ localStorage.setItem('theme', theme); }catch(e){}
+}
+themeToggle.addEventListener('click', ()=>{
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  setTheme(isLight ? 'dark' : 'light');
+});
+
 function openSidebar(){
   sidebar.classList.add('open');
   overlay.classList.add('show');
@@ -2978,7 +3193,7 @@ document.querySelectorAll('.nav-item[data-cat]').forEach(el=>{
     setCategory(el.dataset.cat);
   });
 });
-document.querySelector('.nav-item[data-cat="all"]').classList.add('active');
+document.querySelectorAll('.nav-item[data-cat="all"]').forEach(n=> n.classList.add('active'));
 
 // Category chips — same destinations as the sidebar links, just a faster path
 document.querySelectorAll('.chip[data-cat]').forEach(el=>{
