@@ -367,6 +367,28 @@ main{max-width:760px;margin:0 auto;padding:26px 18px 60px;}
   background:rgba(31,79,50,0.18);border-color:#1F4F32;color:#1F4F32;font-weight:700;
 }
 .card-h-comment .bubble{font-size:12px;line-height:1;}
+.card-h-comment,.big-box-comment{cursor:pointer;}
+.card-h-comment.active,.big-box-comment.active{background:rgba(31,79,50,0.18);border-color:#1F4F32;color:#1F4F32;font-weight:700;}
+
+/* ============ INLINE FEED COMMENTS DRAWER ============
+   Opens in normal document flow right under the card that was tapped —
+   NOT a full-screen overlay, NOT a jump to the top of the page. Cards
+   further down the feed just get pushed down and stay visible/scrollable,
+   exactly like an accordion panel. */
+.feed-comments-drawer{
+  background:var(--card-bg);border:1px solid rgba(0,0,0,.06);border-top:none;
+  border-radius:0 0 var(--radius) var(--radius);
+  margin:-12px 0 12px;padding:14px 14px 16px;
+  animation:drawerOpen .18s ease-out;
+}
+@keyframes drawerOpen{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+.feed-comments-drawer .comments-heading{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.feed-comments-drawer .comments-heading .section-label{margin:0;font-size:13px;}
+.feed-comments-drawer .close-drawer{
+  margin-left:auto;background:none;border:none;color:var(--chalk-dim);
+  font-family:var(--mono);font-size:16px;line-height:1;cursor:pointer;padding:2px 6px;
+}
+.feed-comments-drawer .comment-list{display:flex;flex-direction:column;gap:14px;}
 
 /* ============ TRENDING CAROUSEL ============ */
 .section-label{
@@ -494,19 +516,20 @@ background-repeat:no-repeat;background-position:center;
   margin:-10px 0 18px;line-height:1.5;
 }
 
-/* ============ RELATED ARTICLES ============ */
-.related-section{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);}
-.related-grid{display:grid;grid-template-columns:1fr;gap:16px;}
-@media(min-width:640px){.related-grid{grid-template-columns:1fr 1fr;}}
-@media(min-width:900px){.related-grid{grid-template-columns:1fr 1fr 1fr;}}
-.related-card{display:block;}
-.related-card img{width:100%;height:140px;object-fit:cover;border-radius:var(--radius);margin-bottom:8px;display:block;background:var(--pitch-light);}
-.related-card .tag{margin-bottom:6px;}
+/* ============ RELATED ARTICLES ("Read Also") ============
+   Single-column row cards: image left (140x90, fixed), full title to
+   the right — no snippet, no truncation, whole title always shown. */
+.related-grid{display:flex;flex-direction:column;gap:14px;}
+.related-card{display:flex;align-items:flex-start;gap:12px;}
+.related-card img{
+  width:140px;height:90px;flex:none;object-fit:cover;border-radius:var(--radius);
+  display:block;background:var(--pitch-light);
+}
 .related-card h4{
   margin:0;font-size:14.5px;line-height:1.35;color:var(--chalk);
   font-family:var(--body);font-weight:700;text-transform:none;letter-spacing:0;
-  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
 }
+.related-section{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);}
 
 /* ============ COMMENTS ============ */
 .comments-section{margin-top:36px;padding-top:24px;border-top:1px solid var(--line);}
@@ -1668,31 +1691,38 @@ function handleCardLike(e, postId){
    there's no shared place to store them, so the compose box explains
    that instead of pretending to work.
    ========================================================= */
-let commentsUnsubscribe = null;
+// Comment listeners are keyed by their scope element (the full article
+// view's .comments-section, OR an inline feed drawer) so more than one
+// can't fight over the same DOM. Only one listener per postId is normally
+// live at a time, but keying by scope keeps that assumption from ever
+// silently breaking things.
+const commentListeners = new Map(); // scopeEl -> unsubscribe fn
 
-function stopCommentsListener(){
-  if(commentsUnsubscribe){ commentsUnsubscribe(); commentsUnsubscribe = null; }
+function stopCommentsListener(scopeEl){
+  const unsub = commentListeners.get(scopeEl);
+  if(unsub){ unsub(); commentListeners.delete(scopeEl); }
 }
 
-function startCommentsListener(postId){
-  stopCommentsListener();
+function startCommentsListener(postId, scopeEl){
+  stopCommentsListener(scopeEl);
   if(!FIREBASE_READY) return;
-  commentsUnsubscribe = db.collection('posts').doc(postId).collection('comments')
+  const unsub = db.collection('posts').doc(postId).collection('comments')
     .orderBy('createdAt', 'desc')
     .onSnapshot(
       snapshot=>{
         const comments = snapshot.docs.map(d=>({ id:d.id, ...d.data() }));
-        renderCommentList(comments);
+        renderCommentList(comments, postId, scopeEl);
       },
       err=> console.warn('Could not load comments:', err)
     );
+  commentListeners.set(scopeEl, unsub);
 }
 
-function renderCommentList(comments){
-  const list = document.getElementById('commentList');
-  const countEl = document.getElementById('commentCount');
+function renderCommentList(comments, postId, scopeEl){
+  const list = scopeEl.querySelector('.comment-list');
+  const countEl = scopeEl.querySelector('.comment-count');
   if(!list) return;
-  countEl.textContent = comments.length;
+  if(countEl) countEl.textContent = comments.length;
 
   if(!comments.length){
     list.innerHTML = `<div class="comment-empty">No comments yet — be the first.</div>`;
@@ -1714,7 +1744,7 @@ function renderCommentList(comments){
   }).join('');
 
   list.querySelectorAll('.comment-del').forEach(btn=>{
-    btn.addEventListener('click', ()=> deleteComment(currentOpenArticleId, btn.dataset.id));
+    btn.addEventListener('click', ()=> deleteComment(postId, btn.dataset.id));
   });
 }
 
@@ -1725,8 +1755,8 @@ function commentTimeAgo(createdAt){
   return timeAgo(createdAt.toDate());
 }
 
-function renderCommentComposeArea(){
-  const box = document.getElementById('commentComposeArea');
+function renderCommentComposeArea(postId, scopeEl){
+  const box = scopeEl.querySelector('.comment-compose-area');
   if(!box) return;
   if(!FIREBASE_READY){
     box.innerHTML = `<div class="comment-signin-hint">Comments need the shared backend to be configured.</div>`;
@@ -1736,34 +1766,34 @@ function renderCommentComposeArea(){
     box.innerHTML = `
       <div class="comment-signin-hint">
         <span>Sign in to leave a comment.</span>
-        <button class="write-btn" id="commentSignInBtn">Sign In</button>
+        <button class="write-btn comment-signin-btn">Sign In</button>
       </div>`;
-    document.getElementById('commentSignInBtn').addEventListener('click', ()=> openAuthModal('signin'));
+    box.querySelector('.comment-signin-btn').addEventListener('click', ()=> openAuthModal('signin'));
     return;
   }
   box.innerHTML = `
     <div class="comment-compose">
-      <textarea id="commentInput" maxlength="1000" placeholder="Share your thoughts..."></textarea>
+      <textarea class="comment-input" maxlength="1000" placeholder="Share your thoughts..."></textarea>
       <div class="compose-foot">
-        <span class="char-hint" id="commentCharHint">0 / 1000</span>
-        <button class="publish-btn" id="commentSubmitBtn" style="padding:8px 16px;font-size:13px;">Post comment</button>
+        <span class="char-hint comment-char-hint">0 / 1000</span>
+        <button class="publish-btn comment-submit-btn" style="padding:8px 16px;font-size:13px;">Post comment</button>
       </div>
     </div>`;
-  const input = document.getElementById('commentInput');
+  const input = box.querySelector('.comment-input');
   input.addEventListener('input', ()=>{
-    document.getElementById('commentCharHint').textContent = `${input.value.length} / 1000`;
+    box.querySelector('.comment-char-hint').textContent = `${input.value.length} / 1000`;
   });
-  document.getElementById('commentSubmitBtn').addEventListener('click', submitComment);
+  box.querySelector('.comment-submit-btn').addEventListener('click', ()=> submitComment(postId, scopeEl));
 }
 
-function submitComment(){
-  const input = document.getElementById('commentInput');
+function submitComment(postId, scopeEl){
+  const input = scopeEl.querySelector('.comment-input');
   const text = input.value.trim();
-  if(!text || !currentOpenArticleId) return;
+  if(!text || !postId) return;
   const user = currentUser();
   if(!user) return;
 
-  const postRef = db.collection('posts').doc(currentOpenArticleId);
+  const postRef = db.collection('posts').doc(postId);
   const commentRef = postRef.collection('comments').doc();
   const batch = db.batch();
   batch.set(commentRef, {
@@ -1776,13 +1806,14 @@ function submitComment(){
     commentCount: firebase.firestore.FieldValue.increment(1)
   });
 
-  const submitBtn = document.getElementById('commentSubmitBtn');
+  const submitBtn = scopeEl.querySelector('.comment-submit-btn');
   if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Posting…'; }
 
   batch.commit()
     .then(()=>{
       input.value = '';
-      document.getElementById('commentCharHint').textContent = '0 / 1000';
+      const hint = scopeEl.querySelector('.comment-char-hint');
+      if(hint) hint.textContent = '0 / 1000';
     })
     .catch(err=>{
       console.warn('Could not post comment:', err);
@@ -1803,7 +1834,9 @@ function deleteComment(postId, commentId){
 // Called when auth state changes while an article is open, so the
 // compose box and delete buttons reflect the new sign-in state right away.
 function refreshArticleAuthState(){
-  renderCommentComposeArea();
+  const articleScope = document.querySelector('#articleContent .comments-section');
+  if(articleScope) renderCommentComposeArea(currentOpenArticleId, articleScope);
+  if(activeFeedDrawer) renderCommentComposeArea(activeFeedDrawerPostId, activeFeedDrawer);
 }
 
 </script>
@@ -1873,8 +1906,15 @@ function attachBigBoxHandlers(container){
   container.querySelectorAll('.big-box').forEach(box=>{
     box.addEventListener('click', (e)=>{
       if(e.target.closest('.big-box-like')) return;
+      if(e.target.closest('.big-box-comment')) return;
       e.preventDefault();
       openArticle(box.dataset.id);
+    });
+    const bubble = box.querySelector('.big-box-comment');
+    if(bubble) bubble.addEventListener('click', (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      toggleFeedCommentsDrawer(box.dataset.id, box, bubble);
     });
   });
 }
@@ -1943,10 +1983,68 @@ function attachCardHandlers(container){
   container.querySelectorAll('.card-h').forEach(card=>{
     card.addEventListener('click', (e)=>{
       if(e.target.closest('.card-h-like')) return; // like button handles its own click
+      if(e.target.closest('.card-h-comment')) return; // comment bubble opens the inline drawer instead
       e.preventDefault();
       openArticle(card.dataset.id);
     });
+    const bubble = card.querySelector('.card-h-comment');
+    if(bubble) bubble.addEventListener('click', (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      toggleFeedCommentsDrawer(card.dataset.id, card, bubble);
+    });
   });
+}
+
+// ============ INLINE FEED COMMENTS DRAWER ============
+// Tapping the comment bubble on a feed/hero card expands a comments
+// panel right under that card, in normal page flow — it does NOT
+// navigate to the full article and does NOT jump the scroll position.
+// Cards further down the feed just shift down and stay visible/
+// reachable while the drawer is open. Only one drawer is open at a
+// time; opening another one, or tapping the same bubble again, closes
+// whichever is currently open.
+let activeFeedDrawer = null;
+let activeFeedDrawerPostId = null;
+let activeFeedDrawerBubble = null;
+
+function closeFeedCommentsDrawer(){
+  if(!activeFeedDrawer) return;
+  stopCommentsListener(activeFeedDrawer);
+  activeFeedDrawer.remove();
+  if(activeFeedDrawerBubble) activeFeedDrawerBubble.classList.remove('active');
+  activeFeedDrawer = null;
+  activeFeedDrawerPostId = null;
+  activeFeedDrawerBubble = null;
+}
+
+function toggleFeedCommentsDrawer(postId, cardEl, bubbleEl){
+  if(activeFeedDrawer && activeFeedDrawerPostId === postId){
+    closeFeedCommentsDrawer();
+    return;
+  }
+  closeFeedCommentsDrawer();
+
+  const drawer = document.createElement('div');
+  drawer.className = 'feed-comments-drawer';
+  drawer.innerHTML = `
+    <div class="comments-heading">
+      <div class="section-label">Comments</div>
+      <span class="count">(<span class="comment-count">0</span>)</span>
+      <button type="button" class="close-drawer" aria-label="Close comments">✕</button>
+    </div>
+    <div class="comment-compose-area"></div>
+    <div class="comment-list"></div>`;
+  cardEl.insertAdjacentElement('afterend', drawer);
+  drawer.querySelector('.close-drawer').addEventListener('click', closeFeedCommentsDrawer);
+
+  activeFeedDrawer = drawer;
+  activeFeedDrawerPostId = postId;
+  activeFeedDrawerBubble = bubbleEl;
+  bubbleEl.classList.add('active');
+
+  renderCommentComposeArea(postId, drawer);
+  startCommentsListener(postId, drawer);
 }
 
 function buildCarouselHtml(list){
@@ -1996,6 +2094,7 @@ function renderFeed(){
   const feed = document.getElementById('feed');
   const note = document.getElementById('filterNote');
   stopCarousel();
+  closeFeedCommentsDrawer();
   let list = posts.slice();
 
   if(state.category !== 'all'){
@@ -2222,7 +2321,6 @@ function relatedCardHtml(p){
   return `
     <a class="related-card" href="#" data-id="${p.id}">
       <img src="${p.image}" alt="${escapeHtml(p.imageAlt||'')}" loading="lazy">
-      <span class="tag ${p.category}">${CATEGORY_LABELS[p.category]}</span>
       <h4>${escapeHtml(p.title)}</h4>
     </a>`;
 }
@@ -2246,6 +2344,9 @@ function openArticle(id){
 
   currentOpenArticleId = id;
   recordRead(p);
+
+  const prevArticleScope = document.querySelector('#articleContent .comments-section');
+  if(prevArticleScope) stopCommentsListener(prevArticleScope);
 
   document.getElementById('articleContent').innerHTML = `
     <div class="article-meta">
@@ -2271,10 +2372,10 @@ function openArticle(id){
     <div class="comments-section">
       <div class="comments-heading">
         <div class="section-label">Comments</div>
-        <span class="count">(<span id="commentCount">0</span>)</span>
+        <span class="count">(<span class="comment-count">0</span>)</span>
       </div>
-      <div id="commentComposeArea"></div>
-      <div class="comment-list" id="commentList"></div>
+      <div class="comment-compose-area"></div>
+      <div class="comment-list"></div>
     </div>
     ${related.length ? `
       <div class="related-section">
@@ -2294,8 +2395,9 @@ function openArticle(id){
   const relatedGrid = document.getElementById('relatedGrid');
   if(relatedGrid) attachRelatedCardHandlers(relatedGrid);
 
-  renderCommentComposeArea();
-  startCommentsListener(id);
+  const articleCommentsScope = document.querySelector('#articleContent .comments-section');
+  renderCommentComposeArea(id, articleCommentsScope);
+  startCommentsListener(id, articleCommentsScope);
 
   stopReadStatusTimer();
   readStatusTimer = setInterval(()=> refreshReadStatusUI(id), 15000);
@@ -2806,6 +2908,7 @@ tabTrendingOnly.addEventListener('click', ()=>{ state.sort='trendingOnly'; activ
    VIEW SWITCHING
    ========================================================= */
 function hideAllViews(){
+  closeFeedCommentsDrawer();
   document.getElementById('feedView').hidden = true;
   document.getElementById('articleView').hidden = true;
   document.getElementById('writerView').hidden = true;
