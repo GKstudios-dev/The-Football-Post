@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark light">
 <title>The football Post — Club, National Team &amp; Transfer News</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0E2A1B">
@@ -22,6 +23,7 @@
 <style>
 /* ============ DESIGN TOKENS ============ */
 :root{
+  color-scheme:dark;
   --pitch-dark:#0E2A1B;      /* deep pitch green — page background */
   --pitch:#163B26;           /* panel green */
   --pitch-light:#1F4F32;     /* hover/border green */
@@ -50,6 +52,7 @@
    subtitles go dark green (handled separately below, since --chalk
    itself becomes black and titles need to stay green, not black). */
 :root[data-theme="light"]{
+  color-scheme:light;
   --pitch-dark:#FFFFFF;
   --pitch:#FFFFFF;
   --pitch-light:#EDEDED;
@@ -93,7 +96,7 @@ button{font-family:inherit;cursor:pointer;}
 .hamburger.active span:nth-child(2){opacity:0;}
 .hamburger.active span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
 
-.brand{display:flex;align-items:baseline;gap:8px;flex:1;}
+.brand{display:flex;align-items:baseline;justify-content:center;flex:1;}
 .brand .mark{
   font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:.03em;color:var(--chalk);
   text-transform:uppercase;
@@ -101,11 +104,6 @@ button{font-family:inherit;cursor:pointer;}
 .brand .mark em{
   font-style:normal;color:var(--floodlight);
 }
-.brand .tagline{
-  font-family:var(--mono);font-size:10px;color:var(--chalk-dim);letter-spacing:.08em;
-  display:none;
-}
-@media(min-width:640px){.brand .tagline{display:inline;}}
 
 .write-btn{
   border:1px solid var(--floodlight-dim);
@@ -301,12 +299,12 @@ main{max-width:760px;margin:0 auto;padding:26px 18px 60px;}
 .rail-item-text-only{padding:8px 0;}
 .rail-empty{font-family:var(--mono);font-size:11px;color:var(--chalk-dim);}
 
-@media(min-width:1080px){
+@media(min-width:880px){
   main{max-width:1220px;}
   .feed-layout{
     display:grid;
-    grid-template-columns:200px minmax(0,1fr) 300px;
-    gap:36px;
+    grid-template-columns:180px minmax(0,1fr) 260px;
+    gap:24px;
     align-items:start;
   }
   .feed-rail-left,.feed-rail-right{display:block;}
@@ -316,6 +314,12 @@ main{max-width:760px;margin:0 auto;padding:26px 18px 60px;}
      — trim them down to sit naturally in a narrow column. */
   .feed-rail-left .nav-item{padding:10px 8px;border-left:none;border-radius:var(--radius);}
   .feed-rail-left .nav-item.active{border-left:none;background:var(--pitch-light);}
+}
+@media(min-width:1180px){
+  .feed-layout{
+    grid-template-columns:200px minmax(0,1fr) 300px;
+    gap:36px;
+  }
 }
 
 .view-tabs{
@@ -612,7 +616,7 @@ background-repeat:no-repeat;background-position:center;
 .article h1{font-size:32px;line-height:1.1;margin:0 0 16px;text-transform:lowercase;}
 .article-body{font-size:19px;line-height:1.85;color:var(--chalk);}
 .article-body p{margin:0 0 18px;}
-.article-body h2{font-family:var(--display);font-size:20px;margin:26px 0 12px;color:var(--floodlight);}
+.article-body h2{font-family:var(--display);font-size:20px;margin:26px 0 12px;color:var(--floodlight);text-transform:lowercase;}
 .article-body img{max-width:100%;height:auto;border-radius:var(--radius);margin:14px 0;display:block;}
 .article-body a.inline-post-link{color:var(--floodlight);text-decoration:underline;text-decoration-color:var(--floodlight-dim);text-underline-offset:2px;}
 .article-body a.inline-post-link:hover{text-decoration-color:var(--floodlight);}
@@ -922,7 +926,6 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible{
   </button>
   <div class="brand">
     <span class="mark" id="brandMark">Footy <em>Inform</em></span>
-    <span class="tagline">CLUB · NATIONAL TEAM · TRANSFERS</span>
   </div>
   <button class="write-btn" id="installBtn" hidden style="border-color:var(--floodlight-dim);">Install App</button>
   <span id="modeBadge" hidden style="font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--chalk-dim);border:1px solid var(--line);padding:5px 8px;border-radius:2px;text-transform:uppercase;"></span>
